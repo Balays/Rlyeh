@@ -25,3 +25,12 @@ write_tsv <- function(x, filename, ...) {
   write.table(x, filename, row.names = F, quote = F, sep='\t', ...)
   
 }
+
+
+
+Mode <- function(x) {
+  u <- unique(x)
+  tab <- tabulate(match(x, u))
+  u[tab == max(tab)]
+}
+
