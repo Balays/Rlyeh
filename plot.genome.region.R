@@ -1,4 +1,7 @@
-#' Visualize 5 or 3-primes on a genome
+#'
+#' This is a function that can be used to visualize coverage or the distribution of either 5- or 3-primes ends (or both) of a
+#' small genome (or chromosome), or a subset of it, with the corresponding annotations.
+#' There are many paramaters that can be adjusted.
 #'
 #' @export
 
