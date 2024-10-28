@@ -1,0 +1,9 @@
+# Ignore RStudio project files at any level
+**/.Rproj.user/
+**/.Rhistory
+**/.RData
+**/*.Rproj
+**/.Renviron
+
+# R environment
+.Renviron

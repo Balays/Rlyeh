@@ -1,0 +1,13 @@
+Class Code	One-word Description	Complete Description
+=	Complete	Complete match of intron chain between a transcript and reference.
+c	Contained	Containment of a transcript within a reference transcript, with matching strand.
+j	Novel isoform	Potential novel isoform, with at least one splice junction shared with a reference transcript.
+e	Single exon	Single exon transfrag overlapping a reference exon and intron, implying a possible pre-mRNA fragment.
+i	Intron	A transfrag falling entirely within a reference intron.
+o	Overlap	Generic exonic overlap with a reference transcript.
+p	Run-on	Possible polymerase run-on fragment (within 2kb of a reference transcript).
+r	Repetitive	Repetitive or low complexity transfrag.
+u	Intergenic	Unknown, intergenic transfrag.
+x	Antisense	Antisense overlap with a reference transcript.
+s	Trans-splicing	An intron of the transfrag overlaps a reference intron on the opposite strand (implies trans-splicing).
+.	Unknown	No overlap with any reference transcript.
