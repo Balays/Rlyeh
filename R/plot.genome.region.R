@@ -917,6 +917,10 @@ plot.genome.region <-
     ## PLOT TITLE
     if(!is.na(plot.title)) {
       gg.prime <- gg.prime + labs(title=plot.title)
+
+      if (genome.and.transcripts) {
+        ggtr <- ggtr + labs(title=plot.title)
+      }
     }
 
   }

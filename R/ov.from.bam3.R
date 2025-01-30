@@ -11,14 +11,14 @@ ov.from.bam3 <- function (bamfile,
                           is.lortia = F, lortia.tags = c("l3", "l5", "r3", "r5"),
                           rm.non.correct=F, rm.false.exons=F,
                           crop.na.cigar = T,
-                          rm.gaps.in.aln = F, 
+                          rm.gaps.in.aln = F,
                           add.primes=T
                           ) {
   require(GenomicAlignments)
   require(Rsamtools)
   require(data.table)
   #bamfile <- 'I:/data/SARS-CoV2/mapped_v8/.bam.fastq.pych.bam/Hpi10_A.merged_pychopped.bam'
-  
+
   ## Is this LoRTIA output?
   if (is.lortia) {
     params <- ScanBamParam(what = what, tag = lortia.tags, flag = flag)
@@ -27,7 +27,7 @@ ov.from.bam3 <- function (bamfile,
     bam$tags <- apply(as.data.frame(
       apply(bam[, paste0("tag.", lortia.tags)], 2, function(x) gsub(".*,", "", x))),
       1, function(x) paste0(unique(x), collapse = ","))
-    
+
     ## Remove alignments designated as having no correct adapter by LoRTIA
     if (rm.non.correct) {
       bam <- bam[grepl("correct", bam$tags), ]
@@ -40,13 +40,13 @@ ov.from.bam3 <- function (bamfile,
     params <- ScanBamParam(what = what, flag = flag)
     bam <- as.data.frame(scanBam(bamfile, param = params))
   }
-  
+
   setDT(bam)
-  
+
   ## separate unmapped reads or reads with NA CIGAR
   bam.na <- bam[ is.na(rname) |  is.na(cigar),  ]
   bam    <- bam[!is.na(rname) & !is.na(cigar),  ]
-  
+
   ## Separate alignments with gaps into sub_alignments i.e. exons ?
   if (rm.gaps.in.aln) {
     bam$group <- seq(1, nrow(bam))
@@ -60,22 +60,23 @@ ov.from.bam3 <- function (bamfile,
   aln <- data.table(dplyr::select(aln, -group_name))
   aln <- merge(aln, bam, by = "group")[, -1]
   bam <- aln
-  
+
   ## put back unmapped reads
-  bam <- plyr::rbind.fill(bam, bam.na)
+  bam <- rbind(bam, bam.na, use.names=T, fill=T)
+  setDT(bam)
   ##
-  
+
   ##
   if (is.lortia) {
-    bam <- bam[, c(what, "start", "end"
-                   , paste0("tag.", lortia.tags), "tags")]
+    cnames <- c(what, "start", "end", paste0("tag.", lortia.tags), "tags")
+    bam <- bam[, ..cnames]
   } else {
-    bam <- bam[, c(what, "start", "end")]
+    cnames <- c(what, "start", "end")
+    bam <- bam[, ..cnames]
   }
   colnames(bam)[1] <- "seqnames"
   
-  setDT(bam)
-  
+
   ## add 3' and 5' end positions
   if (add.primes) {
     bam[strand == '+', prime5 := start ]
@@ -83,9 +84,9 @@ ov.from.bam3 <- function (bamfile,
     bam[strand == '-', prime5 := end   ]
     bam[strand == '-', prime3 := start ]
   }
-  
-  
+
+
   return(bam)
-  
+
 }
 
