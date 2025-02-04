@@ -264,7 +264,7 @@ plot.genome.region <-
     if(tolower) { gene.plotsub$gene_name <- tolower(gene.plotsub$gene_name) }
 
     ## ORi regions strand !!!
-    gene.plotsub$strand[grep('Ori', gene.plotsub$gene)] <- '*' #### !!!!
+    #gene.plotsub$strand[grep('Ori', gene.plotsub$gene)] <- '*' #### !!!!
 
     ## flip
     if (flip.gene.y)  { gene.plotsub$ymin <- gene.plotsub$ymin * -1 }
