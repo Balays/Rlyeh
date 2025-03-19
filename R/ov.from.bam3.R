@@ -22,26 +22,37 @@ ov.from.bam3 <- function (bamfile,
   ## Is this LoRTIA output?
   if (is.lortia) {
     params <- ScanBamParam(what = what, tag = lortia.tags, flag = flag)
+    
     bam <- as.data.frame(scanBam(bamfile, param = params))
-    bam$tags <- paste(bam[1, paste0("tag.", lortia.tags)], collapse = ",")
-    bam$tags <- apply(as.data.frame(
-      apply(bam[, paste0("tag.", lortia.tags)], 2, function(x) gsub(".*,", "", x))),
-      1, function(x) paste0(unique(x), collapse = ","))
-
+    setDT(bam)
+    
+    # Define column names dynamically
+    tag_cols <- paste0("tag.", lortia.tags)
+    
+    # Create a temporary cleaned version of the tag columns without modifying the original
+    cleaned_tags <- bam[, lapply(.SD, function(x) gsub(".*,", "", x)), .SDcols = tag_cols]
+    
+    # Paste the cleaned values together into a new 'tags' column
+    bam[, tags := do.call(paste, c(cleaned_tags, sep = ","))]
+      
+    
     ## Remove alignments designated as having no correct adapter by LoRTIA
     if (rm.non.correct) {
-      bam <- bam[grepl("correct", bam$tags), ]
+      bam <- bam[grepl("correct", tags), ]
     }
     ## Remove alignments designated as having false exons by LoRTIA
     if (rm.false.exons) {
-      bam <- bam[!grepl("false", bam$tags), ]
+      bam <- bam[!grepl("false", tags), ]
     }
+    
+  ## Non-LoRTIA input  
   } else {
     params <- ScanBamParam(what = what, flag = flag)
     bam <- as.data.frame(scanBam(bamfile, param = params))
+    setDT(bam)
   }
 
-  setDT(bam)
+
 
   ## separate unmapped reads or reads with NA CIGAR
   bam.na <- bam[ is.na(rname) |  is.na(cigar),  ]

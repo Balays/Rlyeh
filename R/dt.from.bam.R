@@ -20,6 +20,9 @@ dt.from.bam <- function(bamfile, pattern='.bam', bamname=NULL, ...) {
     bam[,sample := ..bamname]
   })
   
+  ## check
+  if(nrow(bam[,]) == 0) { message('There are no reads in ', bamfile, '!') }
+  
   try({
     ## Order
     bam <- bam[order(sample, seqnames, qname, -mapq, flag, cigar, strand)]
@@ -30,6 +33,10 @@ dt.from.bam <- function(bamfile, pattern='.bam', bamname=NULL, ...) {
     ## Add alignment number
     bam[ , aln_nr  := rank(aln_ID, ties.method="min"), by = qname]
   
+    ## Add exon number
+    bam[ , ex_nr   := fifelse(strand == '+', 1:n_distinct(start), 
+                              n_distinct(end):1), by = aln_ID]
+    
     ## check
     if(length(unique(bam[,aln_ID])) != length(unique(bam[,aln_ID]))) { message('something is wrong with the IDs !') }
     

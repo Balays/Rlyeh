@@ -693,10 +693,10 @@ plot.genome.region <-
       fullvisreg <- data.frame(strand=c('+', '-', '*'), start=rep(c(visfrom:visto), 3), end=rep(c(visfrom:visto), 3))
 
       # Use map to create a list of data frames
-      fullvisreg.hpi  <- rbindlist(map(unique(plot.sub$hpi),
+      fullvisreg.hpi  <- rbindlist(purrr::map(unique(plot.sub$hpi),
                                        ~{df_temp <- fullvisreg; df_temp$hpi <- .; df_temp}))
 
-      fullvisreg.hpi.correct_prime <- data.frame(rbindlist(map(as.character(unique(plot.sub[,correct_prime])),
+      fullvisreg.hpi.correct_prime <- data.frame(rbindlist(purrr::map(as.character(unique(plot.sub[,correct_prime])),
                                                     ~{df_temp <- fullvisreg.hpi; df_temp[,correct_prime] <- .; df_temp})))
       fullvisreg.hpi.correct_prime[,correct_prime] <- as.logical(fullvisreg.hpi.correct_prime[,correct_prime])
 
