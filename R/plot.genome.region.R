@@ -12,13 +12,15 @@ plot.genome.region <-
 
            add.coverage=T, add.transcripts.plot=F, add.genome.plot=T, flip.panels=F, genome.only=F, transcripts.only=F,
            genome.and.transcripts=F, transcript.plot.scale=3,
+           facet_genes = facet_nested(rows=vars(seqnames), scales=scales, drop=T),
 
-           add.TR.labels=T, asterisk.size=2, tr.size.multip = 1,
+           add.TR.labels=T, asterisk.size=2, tr.size.multip = 1, add.CAGE_significance.to.TRs =T, TR.y.add=1,
+           facet_TR = facet_nested(rows=vars(seqnames), scales=scales, drop=T),
 
            ## CAGE (or other) clusters
            add.cageTSS=F, cagefr.clust=NULL, cagefr.clust.dist=6,
            cluster.aes = aes(xmin = region_start, xmax = region_end, y = y, forward = orientation, fill = strand, xsubmin = start, xsubmax = end),
-
+           add.cageTSS.features = F,
 
            gene.label=T, add.unstranded=T, add.feature=F, gene.feature.width.thresh=700, flip.gene.y=T, force.gene.y=T,
            force.all.gene.down=F, angle=-60, force.one.lab.per.gene=T, force.all.gene.up.and.down=F,
@@ -58,7 +60,10 @@ plot.genome.region <-
 
 
     TR.subdata$strand <- factor(TR.subdata$strand, levels = c('+', '-', '*'))
-
+    tr.size.multip
+    ## Filling colors
+    if(is.null(tr.palette)) { tr.palette <- palette }
+    
     ## Annotation sizes
     if (is.null(transcript.sizes)) {
       transcript.sizes <- data.frame(
@@ -76,8 +81,8 @@ plot.genome.region <-
     TR.subdata$size <- exon.rect.linewidth /  10000
 
     ## Axis limit
-    ylim.tr    <- c(TR.subdata[, min(ypos) ],
-                    TR.subdata[, max(ypos) ]   )
+    ylim.tr    <- c(TR.subdata[, min(ypos) ] - TR.y.add,
+                    TR.subdata[, max(ypos) ] + TR.y.add   )
 
     if(is.null(visfrom) & is.null(visto)) {
       xlim       <- c(TR.subdata[, min(start.exon) ],
@@ -135,6 +140,7 @@ plot.genome.region <-
       ) } +
 
       ## Label CAGE supported transcripts with stars
+      { if (add.CAGE_significance.to.TRs) 
       geom_text(aes(x=ifelse(strand == '+',
                              prime5.TR - CAGE.nudge_x,
                              prime5.TR + CAGE.nudge_x),
@@ -142,8 +148,14 @@ plot.genome.region <-
                     label = ifelse(is.na(CAGE_significance), '', CAGE_significance)),
                 size = asterisk.size,
                 fontface = "bold"
-      ) +
+      ) } +
 
+      
+      ## Vertical lines
+      { if(!is.null(vline ))  vline  } +
+      { if(!is.null(vline2))  vline2 } +
+      
+      
       ## Axes and coordinates
       scale_y_continuous(breaks = c(-5, 0, 5, 10, 15)) +
       coord_cartesian(
@@ -160,9 +172,13 @@ plot.genome.region <-
       #labs(x='Genomic Position', y='Transcripts (grouped by 3-prime end)', title='Transcript Visualization') +
       theme_general +
       theme(
-        axis.text.y = element_blank(),
+        strip.text       = strip.text,
+        strip.background = element_rect(fill='lightgrey'),
+        strip.placement  = 'outside' ,
+        
+        axis.text.y  = element_blank(),
         axis.title.y = element_blank(),
-        axis.text.x = element_blank(),
+        axis.text.x  = element_blank(),
         axis.title.x = element_blank(),
 
         ## Remove Y-axis ticks and lines
@@ -184,12 +200,11 @@ plot.genome.region <-
       # In this case the spaces between the genome and transcriptome and "coverage" plots are minimized.
       { if (is.null(margins) & !transcripts.only) theme(plot.margin = unit(c(5,5,1,5), 'mm')) } +
 
-      ## Faceting
-      facet_cropF
-
+      ## Faceting -->> ???
+      facet_TR
+      #NULL
 
       ## Filling colors for strand or other category
-      if(is.null(tr.palette)) { tr.palette <- palette }
 
       if(annot_fill_column == 'strand') {
         strands <- factor(unique(as.character(TR.subdata$strand)), levels = c('+', '-', '*'))
@@ -208,10 +223,10 @@ plot.genome.region <-
           ggtr <- ggtr + scale_fill_manual(values=alpha(tr.palette[c(1,2,3)], alpha=alpha$gene_geom))
 
         } else if ( all(is.element(c('+'), strands)) )     {
-          ggtr <- ggtr + scale_fill_manual(values=alpha(tr.palette[c(1)],   alpha=alpha$gene_geom))
+          ggtr <- ggtr + scale_fill_manual(values=alpha(tr.palette[c(1, 2)],   alpha=alpha$gene_geom))
 
         } else if ( all(is.element(c('-'), strands))  )    {
-          ggtr <- ggtr + scale_fill_manual(values=alpha(tr.palette[c(2)],   alpha=alpha$gene_geom))
+          ggtr <- ggtr + scale_fill_manual(values=alpha(tr.palette[c(2, 1)],   alpha=alpha$gene_geom))
 
         }
       } else {
@@ -239,16 +254,27 @@ plot.genome.region <-
       genome_join(gene.plotdata, visregion, by=c('seqnames', 'start', 'end')),
       -c(seqnames.y, start.y, end.y) )
     colnames(gene.plotsub)[is.element(colnames(gene.plotsub), c('seqnames.x', 'start.x', 'end.x'))] <- c('seqnames', 'start', 'end')
-
-    gene.plotsub$strand <- factor(gene.plotsub$strand, levels=c('+', '-', '*'))
+    
+    ## make DT
+    setDT(gene.plotsub)
+    
+    ## factorize strand
+    gene.plotsub[, strand := factor(strand, levels=c('+', '-', '*'))]
 
     ## facet
-    gene.plotsub$hpi <- genome
+    gene.plotsub[, hpi  := genome]
 
+    
+    ## put 'clusters' into one y-position
     for (i in unique(gene.plotsub$cluster)) {
       gene.plotsub$ymin[gene.plotsub$cluster == i] <- seq(1, nrow(gene.plotsub[gene.plotsub$cluster == i, ]))
+      
     }
-
+    #gene.plotsub[, ymin := seq(1, n_distinct(start)), by=cluster]
+    
+    ## back to DF
+    setDF(gene.plotsub)
+    
     ### Add sub-gene positions
     gene.plotsub$subgene.start <- gene.plotsub$start
     gene.plotsub$subgene.end   <- gene.plotsub$end
@@ -315,8 +341,8 @@ plot.genome.region <-
     if (force.one.lab.per.gene) {
       multi.genes <- dup(gene.stranded$gene)
       for (mgene in multi.genes) {
-        gene.stranded$gene[gene.stranded$gene == mgene & !is.na(gene.stranded$gene)][1]  <- mgene
-        gene.stranded$gene[gene.stranded$gene == mgene & !is.na(gene.stranded$gene)][-1] <- NA
+        gene.stranded[gene.stranded$gene == mgene & !is.na(gene.stranded$gene),'gene_name'][1]  <- mgene
+        gene.stranded[gene.stranded$gene == mgene & !is.na(gene.stranded$gene),'gene_name'][-1] <- NA
       }
     }
 
@@ -331,12 +357,19 @@ plot.genome.region <-
     gene.stranded$strand   <- factor(gene.stranded$strand,   levels=c('+', '-', '*'))
     gene.unstranded$strand <- factor(gene.unstranded$strand, levels=c('+', '-', '*'))
 
-    ### CAGE TSS clusters as genome feature
-    if(add.cageTSS ) {
+    ### Check if there are CAGE clusters in the region
+    if( add.cageTSS ) {
       cagefr.clust <- dplyr::select(genome_join(cagefr.clust, visregion, by=c('seqnames', 'start', 'end')), -c(seqnames.y, start.y, end.y) )
       colnames(cagefr.clust)[is.element(colnames(cagefr.clust), c('seqnames.x', 'start.x', 'end.x'))] <- c('seqnames', 'start', 'end')
       cagefr.clust$strand <- factor(cagefr.clust$strand, levels=c('+', '-', '*'))
-
+    
+      if (nrow(cagefr.clust) > 0) { add.cageTSS <- T } else { add.cageTSS <- F }
+      
+    }
+    
+    ### CAGE TSS clusters as genome feature
+    if(add.cageTSS ) {
+      
       ## faceting
       cagefr.clust$hpi <- genome
 
@@ -361,17 +394,23 @@ plot.genome.region <-
       cagefr.clust$ymin  <-  min(cagefr.clust$y)
       cagefr.clust$ymax  <-  max(cagefr.clust$y)
 
-      cagefr.clust$region_start <- visfrom # min(cagefr.clust$start)
-      cagefr.clust$region_end   <- visto   # max(cagefr.clust$end)
-      ## fix
+      # crop other clusters
+      #cagefr.clust$region_start <- visfrom # min(cagefr.clust$start)
+      #cagefr.clust$region_end   <- visto   # max(cagefr.clust$end)
+      cagefr.clust$visfrom <- visfrom # min(cagefr.clust$start)
+      cagefr.clust$visto   <- visto   # max(cagefr.clust$end)
+      
+      
+      ## factorize strands
       cagefr.clust$strand <-  factor(cagefr.clust$strand, levels = c('+' ,'-', '*'))
 
+      ## y-breaks
       ybreaks.genome <- unique(c(gene.plotsub$ymin, cagefr.clust$y))
 
     } else {
       cagefr.clust   <- data.frame(ymin=min(gene.plotsub$ymin), ymax=max(gene.plotsub$ymin))
 
-      ybreaks.genome <- unique(c(gene.plotsub$ymin  ))
+      ybreaks.genome <- unique( c(gene.plotsub$ymin  ))
 
     }
 
@@ -554,20 +593,48 @@ plot.genome.region <-
       } +
 
 
-      ## CageFighteR results
-      { if(add.cageTSS ) geom_gene_arrow(
+      ## CAGE results
+      { if( add.cageTSS ) geom_gene_arrow(
         arrowhead_height  = grid::unit(gene.sizes$genome_feature_arrowhead_height,  "mm"),
         arrow_body_height = grid::unit(gene.sizes$genome_feature_arrow_body_height, "mm"),
-        data=cagefr.clust,#[cagefr.clust$strand == '-', ],
-        aes(xmin = region_start, xmax = region_end, y = y, forward = orientation), fill="white")
-      } +
-      { if(add.cageTSS ) geom_subgene_arrow(
+        data = cagefr.clust,      #[cagefr.clust$strand == '-', ],
+        aes(xmin = visfrom, xmax = visto, y = y, forward = orientation), fill="white"
+      ) } + 
+      { if( add.cageTSS ) geom_gene_arrow(
         arrowhead_height  = grid::unit(gene.sizes$genome_feature_arrowhead_height,  "mm"),
         arrow_body_height = grid::unit(gene.sizes$genome_feature_arrow_body_height, "mm"),
-        data = cagefr.clust,#[cagefr.clust$strand == '-', ],
-        mapping = cluster.aes )
-      } +
-
+        data = cagefr.clust,    #[cagefr.clust$strand == '-', ],
+        mapping = cluster.aes 
+      ) } + 
+      { if( add.cageTSS ) geom_feature(
+        feature_height  = unit(3, "mm"),
+        feature_width   = unit(3, "mm"),
+        arrowhead_width = unit(2, "mm"),
+        data  = cagefr.clust[cagefr.clust$strand == '+', ],
+        aes(x = start, y = y, forward = orientation)
+      ) } +
+      { if( add.cageTSS & add.cageTSS.features) geom_feature_label(
+        feature_height  = unit(3, "mm"),
+        feature_width   = unit(3, "mm"),
+        arrowhead_width = unit(2, "mm"),
+        data  = cagefr.clust[cagefr.clust$strand == '+', ],
+        aes(x = start, y = y, label = gene, forward = orientation)
+      ) } +
+      { if( add.cageTSS ) geom_feature(
+        feature_height  = unit(-3, "mm"),
+        feature_width   = unit(-3, "mm"),
+        arrowhead_width = unit(-2, "mm"),
+        data  = cagefr.clust[cagefr.clust$strand == '-', ],
+        aes(x = start, y = y, forward = orientation)
+      ) } +
+      { if( add.cageTSS & add.cageTSS.features) geom_feature_label(
+        feature_height  = unit(-3, "mm"),
+        feature_width   = unit(-3, "mm"),
+        arrowhead_width = unit(-2, "mm"),
+        data  = cagefr.clust[cagefr.clust$strand == '-', ],
+        aes(x = start, y = y, label = gene, forward = orientation)
+      ) } +
+      
 
       ## X-axis scale
       scale_x_continuous(labels  = function(x) format(x, big.mark = " ", scientific = FALSE),
@@ -586,11 +653,17 @@ plot.genome.region <-
       #{ if( add.cageTSS ) scale_y_continuous(breaks = unique(c(gene.plotsub$ymin, cagefr.clust$y))) } +
       #{ if(!add.cageTSS ) scale_y_continuous(breaks = unique(c(gene.plotsub$ymin  ))) } +
 
-      #xlim(c(visfrom, visto)) +
-
+      
+      ## Vertical lines
+      { if(!is.null(vline ))  vline  } +
+      { if(!is.null(vline2))  vline2 } +
+      
+      
       ## X and Y axis limits
       coord_cartesian(ylim = c(ylims.gene[1], ylims.gene[2]),
                       xlim = c(visfrom, visto) ) +
+
+      #xlim(c(visfrom, visto)) +
 
       ## theme components
       theme_general +
@@ -650,18 +723,17 @@ plot.genome.region <-
       gggenome <- gggenome + scale_fill_manual(values=alpha(palette[c(1,2,3)], alpha=alpha$gene_geom))
 
     } else if ( all(is.element(c('+'), strands)) )     {
-      gggenome <- gggenome + scale_fill_manual(values=alpha(palette[c(1)],   alpha=alpha$gene_geom))
+      gggenome <- gggenome + scale_fill_manual(values=alpha(palette[c(1, 2)],   alpha=alpha$gene_geom))
 
     } else if ( all(is.element(c('-'), strands))  )    {
-      gggenome <- gggenome + scale_fill_manual(values=alpha(palette[c(2)],   alpha=alpha$gene_geom))
+      gggenome <- gggenome + scale_fill_manual(values=alpha(palette[c(2, 1)],   alpha=alpha$gene_geom))
 
     }
 
 
 
       ## Faceting --> this
-      gggenome <- gggenome +
-        facet_cropF
+      gggenome <- gggenome + facet_genes #facet_cropF
 
 
     ## Finished annotation plot
@@ -860,8 +932,10 @@ plot.genome.region <-
 
 
       ## vertical lines
-      { if(!is.null(vline))  geom_vline(xintercept = vline,  linetype='dashed', color='blue', size=1) } +
-      { if(!is.null(vline2)) geom_vline(xintercept = vline2, linetype='dashed', color='blue', size=1) } +
+      #{ if(!is.null(vline))  geom_vline(xintercept = vline,  linetype='dashed', color='blue', size=1) } +
+      #{ if(!is.null(vline2)) geom_vline(xintercept = vline2, linetype='dashed', color='blue', size=1) } +
+      { if(!is.null(vline ))  vline  } +
+      { if(!is.null(vline2))  vline2 } +
 
       ## Theme elements
       theme_general +
