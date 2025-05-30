@@ -183,6 +183,7 @@ plot.genome.region <-
 
         ## Remove Y-axis ticks and lines
         axis.ticks.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_blank(),
         panel.grid.major.y = element_blank(),
 
