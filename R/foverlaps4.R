@@ -112,21 +112,27 @@ foverlaps4 <- function(DTx, DTy,
     setnames(overlap_results$prime3, old = c('start', 'end'), new = c('start_prime3', 'end_prime3'))
     
     # Select relevant columns
-    cols_to_keep <- c('tx_id.i', 'y_id', 'seqnames', 'strand', 'overlap_type')
+    ## Column produced by foverlaps for the query table (DTx) is prefixed
+    ## with 'i.' when there are overlapping columns.  The previous
+    ## implementation attempted to access a non‑existent column named
+    ## 'tx_id.i'.  Replace it with the correct column name 'i.tx_id'.
+
+    cols_to_keep <- c('i.tx_id', 'y_id', 'seqnames', 'strand', 'overlap_type')
     DTprime5_reduced <- overlap_results$prime5[, ..cols_to_keep]
     DTprime3_reduced <- overlap_results$prime3[, ..cols_to_keep]
     
-    # Merge on 'tx_id.i' and 'y_id'
-    DTmerged <- merge(DTprime5_reduced, DTprime3_reduced, by = c('tx_id.i', 'y_id'))
+    # Merge on 'i.tx_id' (query ID) and 'y_id'
+    DTmerged <- merge(DTprime5_reduced, DTprime3_reduced,
+                      by = c('i.tx_id', 'y_id'))
     
     # Retrieve full details
     DTxy <- DTmerged[
       overlap_results$prime5,
-      on = c('tx_id.i', 'y_id'),
+      on = c('i.tx_id', 'y_id'),
       nomatch = 0
     ][
       overlap_results$prime3,
-      on = c('tx_id.i', 'y_id'),
+      on = c('i.tx_id', 'y_id'),
       nomatch = 0,
       suffixes = c('.prime5', '.prime3')
     ]
