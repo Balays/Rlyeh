@@ -40,6 +40,30 @@ plot.genome.region <-
            ...) {
 
 
+  #### Vlines
+    
+  vline2 <- if (!is.null(vline2)) {
+    list(
+      new_scale_colour(),                             # must come before the vline
+      vline2,
+      scale_colour_manual(values = palette[-(1:3)])
+    )
+  } else {
+    list()                                           # empty list if nothing to add
+  }
+  
+  vline  <- if (!is.null(vline)) {
+    list(
+      new_scale_colour(),                             # must come before the vline
+      vline,
+      scale_colour_manual(values = palette[-(1:3)])
+    )
+  } else {
+    list()                                           # empty list if nothing to add
+  }
+  
+  
+    
   #### Genome and annotation plot ####
 
   ### subset the features
@@ -152,8 +176,10 @@ plot.genome.region <-
 
       
       ## Vertical lines
-      { if(!is.null(vline ))  vline  } +
-      { if(!is.null(vline2))  vline2 } +
+      { if(!is.null(vline ))  vline   } +
+      { if(!is.null(vline2))  vline2  } +
+      
+      #if(!is.null(vline )) { ggtr <- ggtr + new_scale_colour() + vline  + scale_colour_manual(values = palette[-c(1:3)]) }
       
       
       ## Axes and coordinates
@@ -237,7 +263,8 @@ plot.genome.region <-
     # ggtr
     # ggsave('test.jpg', ggtr, width = 9, height=15)
 
-
+        
+      
     ## set axes' limits fo Gene annotation also
     visfrom  <- xlim[1]
     visto    <- xlim[2]
@@ -940,7 +967,7 @@ plot.genome.region <-
 
       ## Theme elements
       theme_general +
-      theme(strip.text       =  strip.text,
+      theme(strip.text       = strip.text,
             strip.background = element_rect(fill='lightgrey'),
             strip.placement  = 'outside' ,
 
@@ -973,15 +1000,15 @@ plot.genome.region <-
 
       ) +
 
-      ## Plot margins
+    ## Plot margins
 
-      # If margins is set explicitly, it will apply to each part of the plot
-      { if (!is.null(margins))   theme(plot.margin = margins) } +
+    # If margins is set explicitly, it will apply to each part of the plot
+    { if (!is.null(margins))   theme(plot.margin = margins) } +
 
-      # Default is when the "margins" parameter is NULL.
-      # In this case the spaces between the genome and transcriptome and "coverage" plots are minimized.
-      { if (is.null(margins) & add.coverage)
-        theme(plot.margin = unit(c(5,5,1,5), 'mm')) }
+    # Default is when the "margins" parameter is NULL.
+    # In this case the spaces between the genome and transcriptome and "coverage" plots are minimized.
+    { if (is.null(margins) & add.coverage)
+      theme(plot.margin = unit(c(5,5,1,5), 'mm')) }
 
 
 
