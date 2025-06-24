@@ -54,7 +54,7 @@ plot.genome.region <-
   
   vline  <- if (!is.null(vline)) {
     list(
-      new_scale_colour(),                             # must come before the vline
+      new_scale_colour(),                            # must come before the vline
       vline,
       scale_colour_manual(values = palette[-(1:3)])
     )
@@ -932,9 +932,37 @@ plot.genome.region <-
 
     gg.prime <- gg.prime +
       geom +
-      { if(!is.null(geom2)) geom2 } +
-      scale_fill_manual(values =alpha(palette, alpha$cov_geom)) +
-      scale_color_manual(values=alpha(palette, alpha$cov_geom)) +
+      { if(!is.null(geom2)) geom2 }
+      
+      
+    ## Filling colors
+    strands <- factor(unique(as.character(plot.sub$strand)), levels = c('+', '-', '*'))
+    strands <- strands[order(strands)]
+    
+    if        ( all(is.element(c('+', '-'), strands)) )     {
+      gg.prime <- gg.prime + scale_fill_manual(values=alpha(palette[c(1,2)],   alpha=alpha$gene_geom))
+      
+    } else if ( all(is.element(c('+', '*'), strands)) )     {
+      gg.prime <- gg.prime + scale_fill_manual(values=alpha(palette[c(1,3)],   alpha=alpha$gene_geom))
+      
+    } else if ( all(is.element(c('-', '*'), strands))  )    {
+      gg.prime <- gg.prime + scale_fill_manual(values=alpha(palette[c(2,3)],   alpha=alpha$gene_geom))
+      
+    } else if ( all(is.element(c('+', '-', '*'), strands)) ){
+      gg.prime <- gg.prime + scale_fill_manual(values=alpha(palette[c(1,2,3)], alpha=alpha$gene_geom))
+      
+    } else if ( all(is.element(c('+'), strands)) )     {
+      gg.prime <- gg.prime + scale_fill_manual(values=alpha(palette[c(1, 2)],  alpha=alpha$gene_geom))
+      
+    } else if ( all(is.element(c('-'), strands))  )    {
+      gg.prime <- gg.prime + scale_fill_manual(values=alpha(palette[c(2, 1)],  alpha=alpha$gene_geom))
+      
+    }
+    
+    gg.prime <- gg.prime +
+      
+      #scale_fill_manual(values =alpha(palette, alpha$cov_geom)) +
+      #scale_color_manual(values=alpha(palette, alpha$cov_geom)) +
 
       ## x-axis scale
       scale_x_continuous(name=xlab_name,
