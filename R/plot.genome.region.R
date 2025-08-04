@@ -28,7 +28,7 @@ plot.genome.region <-
            annot_fill_column='strand', tr.palette = NULL,
 
            sizes=16, gene.sizes=NULL, gene.label.col='white', palette=pal_npg()(10), alpha=0.8, plot.title=NA,
-           gene_name_col = 'gene', tolower=F, vline=NULL, vline2=NULL, breakseq=5000, margins=unit(c(1,1,1,1), "cm"),
+           gene_name_col = 'gene', tolower=F, vline=NULL, vline2=NULL, breakseq=5000, n_breaks = 5, margins=unit(c(1,1,1,1), "cm"),
            scales='fixed', genomplot.scale=5.5, ylim=c(0, NA), y.log10=F, y.log2=F, ylims.gene=NULL, y.multip=1.5,
            ybreaks=NULL, ybreak_n=10,
            strip.text =  element_text(angle = 45, size = sizes*1.5, hjust = 0.5), facet_space=1,
@@ -40,6 +40,22 @@ plot.genome.region <-
            ...) {
 
 
+    
+  ## Adaptive breakseq
+  if(is.null(breakseq) ) {
+    
+    d <- (visto - visfrom) / n_breaks
+    
+    s <- round( log10(d), 0)
+    
+    f <- cumsum(rep(10^(s)/2, 20))
+    
+    breakseq <- f[abs(f -d) == min(abs(f -d))]
+    
+  } else { breakseq <- breakseq }
+  
+  message('OK')
+  
   #### Vlines
     
   vline2 <- if (!is.null(vline2)) {
@@ -450,6 +466,7 @@ plot.genome.region <-
       ylims.gene <- ylims.gene
     }
 
+    
     ### Build genome annotation subplot
     gggenome <- ggplot(#gene.plotsub, #[gene.plotsub$strand != '*', ],
       mapping = gene.aes) +
@@ -718,9 +735,9 @@ plot.genome.region <-
             panel.spacing = grid::unit(facet_space, "mm"),
 
             plot.title    = element_text(size=sizes*2),
-            plot.subtitle = element_text(size=sizes),
-
-            ...
+            plot.subtitle = element_text(size=sizes)
+            
+            #,...
       ) +
 
 
@@ -738,26 +755,23 @@ plot.genome.region <-
     strands <- factor(unique(as.character(gene.plotsub$strand)), levels = c('+', '-', '*'))
     strands <- strands[order(strands)]
 
-    if        ( all(is.element(c('+', '-'), strands)) )     {
-      gggenome <- gggenome + scale_fill_manual(values=alpha(palette[c(1,2)],   alpha=alpha$gene_geom))
-
-    } else if ( all(is.element(c('+', '*'), strands)) )     {
-      gggenome <- gggenome + scale_fill_manual(values=alpha(palette[c(1,3)],   alpha=alpha$gene_geom))
-
-    } else if ( all(is.element(c('-', '*'), strands))  )    {
-      gggenome <- gggenome + scale_fill_manual(values=alpha(palette[c(2,3)],   alpha=alpha$gene_geom))
-
-    } else if ( all(is.element(c('+', '-', '*'), strands)) ){
-      gggenome <- gggenome + scale_fill_manual(values=alpha(palette[c(1,2,3)], alpha=alpha$gene_geom))
-
-    } else if ( all(is.element(c('+'), strands)) )     {
-      gggenome <- gggenome + scale_fill_manual(values=alpha(palette[c(1, 2)],   alpha=alpha$gene_geom))
-
-    } else if ( all(is.element(c('-'), strands))  )    {
-      gggenome <- gggenome + scale_fill_manual(values=alpha(palette[c(2, 1)],   alpha=alpha$gene_geom))
-
+    
+    if        (identical(strands, c('+', '-'))) {
+      gggenome <- gggenome + scale_fill_manual(values = alpha(palette[c(1,2)], alpha=alpha$gene_geom))
+    } else if (identical(strands, c('+', '*'))) {
+      gggenome <- gggenome + scale_fill_manual(values = alpha(palette[c(1,3)], alpha=alpha$gene_geom))
+    } else if (identical(strands, c('-', '*'))) {
+      gggenome <- gggenome + scale_fill_manual(values = alpha(palette[c(2,3)], alpha=alpha$gene_geom))
+    } else if (identical(strands, c('+', '-', '*'))) {
+      gggenome <- gggenome + scale_fill_manual(values = alpha(palette[c(1,2,3)], alpha=alpha$gene_geom))
+    } else if (identical(strands, c('+'))) {
+      gggenome <- gggenome + scale_fill_manual(values = alpha(palette[c(1)], alpha=alpha$gene_geom))
+    } else if (identical(strands, c('-'))) {
+      gggenome <- gggenome + scale_fill_manual(values = alpha(palette[c(2)], alpha=alpha$gene_geom))
+    } else if (identical(strands, c('*'))) {
+      gggenome <- gggenome + scale_fill_manual(values = alpha(palette[c(3)], alpha=alpha$gene_geom))
     }
-
+    
 
 
       ## Faceting --> this
