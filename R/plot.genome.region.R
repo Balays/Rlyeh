@@ -134,12 +134,12 @@ plot.genome.region <-
     CAGE.nudge_x <- (visregion$end - visregion$start) / 100
 
     ggtr <- ggplot(TR.subdata) +
-
+      
       ## Gene arrows for the first exons
       geom_gene_arrow(data=TR.subdata[last_exon == T,],
                       aes(fill = as.factor(!!sym((annot_fill_column))),
-                          xmin=start.exon, xmax=end.exon,
-                          y = ypos, forward = orientation,
+                          xmin = start.exon, xmax = end.exon,
+                          y    = ypos, forward = orientation,
                           #ymin=ypos-0.2, ymax=ypos+0.2
                       ),
                       arrowhead_height  = grid::unit(gene.sizes$gene_arrowhead_height  * tr.size.multip,  "mm"),
@@ -162,34 +162,34 @@ plot.genome.region <-
                      rect_height = grid::unit(gene.sizes$gene_arrow_body_height * tr.size.multip, "mm"),
                      color='black',
                      alpha=alpha$gene_geom) +
-
-
+      
+      
       ## Introns
       geom_segment(data=TR.subdata[exon_number != 1,],
                    aes(x=intron_start-1, xend=intron_end+1, y=ypos, yend=ypos),
                    color='black', linetype=intron.linetype, linewidth=intron.linewidth) +
-
+      
       ## Transcript labels
       { if (add.TR.labels)
-      geom_gene_label(data = TR.subdata[last_exon == T,],
-                      aes(xmin=start.exon, xmax=end.exon, y = ypos, label=transcript_id)
-                      # , forward = 1
-                      ,height = grid::unit(transcript.label.size, "mm"), grow = F, colour=gene.label.col, align = "centre"
-                      #feature_height = grid::unit(linewidth, "mm"),
-                      #feature_width  = grid::unit(linewidth, "mm")
-      ) } +
-
+        geom_gene_label(data = TR.subdata[last_exon == T,],
+                        aes(xmin=start.exon, xmax=end.exon, y = ypos, label=transcript_id)
+                        # , forward = 1
+                        ,height = grid::unit(transcript.label.size, "mm"), grow = F, colour=gene.label.col, align = "centre"
+                        #feature_height = grid::unit(linewidth, "mm"),
+                        #feature_width  = grid::unit(linewidth, "mm")
+        ) } +
+      
       ## Label CAGE supported transcripts with stars
       { if (add.CAGE_significance.to.TRs) 
-      geom_text(aes(x=ifelse(strand == '+',
-                             prime5.TR - CAGE.nudge_x,
-                             prime5.TR + CAGE.nudge_x),
-                    y=ypos,
-                    label = ifelse(is.na(CAGE_significance), '', CAGE_significance)),
-                size = asterisk.size,
-                fontface = "bold"
-      ) } +
-
+        geom_text(aes(x=ifelse(strand == '+',
+                               prime5.TR - CAGE.nudge_x,
+                               prime5.TR + CAGE.nudge_x),
+                      y=ypos,
+                      label = ifelse(is.na(CAGE_significance), '', CAGE_significance)),
+                  size = asterisk.size,
+                  fontface = "bold"
+        ) } +
+      
       
       ## Vertical lines
       { if(!is.null(vline ))  vline   } +
@@ -204,12 +204,12 @@ plot.genome.region <-
         xlim=xlim,    # c(visfrom, visto), #
         ylim=ylim.tr  # c(1530, 1590)
       ) +
-
+      
       ## X-axis scale
       scale_x_continuous(labels  = function(x) format(x, big.mark = " ", scientific = FALSE),
                          #limits  = c(xlim[1], xlim[2]),
                          breaks  = seq(0, l_genome, breakseq) ) +
-
+      
       ## Theme elements
       #labs(x='Genomic Position', y='Transcripts (grouped by 3-prime end)', title='Transcript Visualization') +
       theme_general +
@@ -222,537 +222,537 @@ plot.genome.region <-
         axis.title.y = element_blank(),
         axis.text.x  = element_blank(),
         axis.title.x = element_blank(),
-
+        
         ## Remove Y-axis ticks and lines
         axis.ticks.y = element_blank(),
         panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_blank(),
         panel.grid.major.y = element_blank(),
-
+        
         legend.position = 'none',
         ...
-
+        
       ) +
-
+      
       ## Plot margins
-
+      
       # If margins is set explicitly, it will apply to each part of the plot
       { if (!is.null(margins))   theme(plot.margin = margins) } +
-
+      
       # Default is when the "margins" parameter is NULL.
       # In this case the spaces between the genome and transcriptome and "coverage" plots are minimized.
       { if (is.null(margins) & !transcripts.only) theme(plot.margin = unit(c(5,5,1,5), 'mm')) } +
-
+      
       ## Faceting -->> ???
       facet_TR
-      #NULL
-
-      ## Filling colors for strand or other category
-
-      if(annot_fill_column == 'strand') {
-        strands <- factor(unique(as.character(TR.subdata$strand)), levels = c('+', '-', '*'))
-        strands <- strands[order(strands)]
-
-        if        ( all(is.element(c('+', '-'), strands)) )     {
-          ggtr <- ggtr + scale_fill_manual(values=alpha(tr.palette[c(1,2)],   alpha=alpha$gene_geom))
-
-        } else if ( all(is.element(c('+', '*'), strands)) )     {
-          ggtr <- ggtr + scale_fill_manual(values=alpha(tr.palette[c(1,3)],   alpha=alpha$gene_geom))
-
-        } else if ( all(is.element(c('-', '*'), strands))  )    {
-          ggtr <- ggtr + scale_fill_manual(values=alpha(tr.palette[c(2,3)],   alpha=alpha$gene_geom))
-
-        } else if ( all(is.element(c('+', '-', '*'), strands)) ){
-          ggtr <- ggtr + scale_fill_manual(values=alpha(tr.palette[c(1,2,3)], alpha=alpha$gene_geom))
-
-        } else if ( all(is.element(c('+'), strands)) )     {
-          ggtr <- ggtr + scale_fill_manual(values=alpha(tr.palette[c(1, 2)],   alpha=alpha$gene_geom))
-
-        } else if ( all(is.element(c('-'), strands))  )    {
-          ggtr <- ggtr + scale_fill_manual(values=alpha(tr.palette[c(2, 1)],   alpha=alpha$gene_geom))
-
-        }
-      } else {
-        ggtr <- ggtr + scale_fill_manual(values=alpha(tr.palette[],   alpha=alpha$gene_geom))
+    #NULL
+    
+    ## Filling colors for strand or other category
+    
+    if(annot_fill_column == 'strand') {
+      strands <- factor(unique(as.character(TR.subdata$strand)), levels = c('+', '-', '*'))
+      strands <- strands[order(strands)]
+      
+      if        ( all(is.element(c('+', '-'), strands)) )     {
+        ggtr <- ggtr + scale_fill_manual(values=alpha(tr.palette[c(1,2)],   alpha=alpha$gene_geom))
+        
+      } else if ( all(is.element(c('+', '*'), strands)) )     {
+        ggtr <- ggtr + scale_fill_manual(values=alpha(tr.palette[c(1,3)],   alpha=alpha$gene_geom))
+        
+      } else if ( all(is.element(c('-', '*'), strands))  )    {
+        ggtr <- ggtr + scale_fill_manual(values=alpha(tr.palette[c(2,3)],   alpha=alpha$gene_geom))
+        
+      } else if ( all(is.element(c('+', '-', '*'), strands)) ){
+        ggtr <- ggtr + scale_fill_manual(values=alpha(tr.palette[c(1,2,3)], alpha=alpha$gene_geom))
+        
+      } else if ( all(is.element(c('+'), strands)) )     {
+        ggtr <- ggtr + scale_fill_manual(values=alpha(tr.palette[c(1, 2)],   alpha=alpha$gene_geom))
+        
+      } else if ( all(is.element(c('-'), strands))  )    {
+        ggtr <- ggtr + scale_fill_manual(values=alpha(tr.palette[c(2, 1)],   alpha=alpha$gene_geom))
+        
       }
-
+    } else {
+      ggtr <- ggtr + scale_fill_manual(values=alpha(tr.palette[],   alpha=alpha$gene_geom))
+    }
+    
     # ggtr
     # ggsave('test.jpg', ggtr, width = 9, height=15)
-
-        
-      
+    
+    
+    
     ## set axes' limits fo Gene annotation also
     visfrom  <- xlim[1]
     visto    <- xlim[2]
-
-
+    
+    
     ### Update visregion
     visregion      <- data.frame(seqnames=genome, start=visfrom, end=visto)
-
+    
   }
-
+  
   #### Gene annotation
   #if(add.genome.plot) {
-
-    gene.plotsub   <- dplyr::select(
-      genome_join(gene.plotdata, visregion, by=c('seqnames', 'start', 'end')),
-      -c(seqnames.y, start.y, end.y) )
-    colnames(gene.plotsub)[is.element(colnames(gene.plotsub), c('seqnames.x', 'start.x', 'end.x'))] <- c('seqnames', 'start', 'end')
+  
+  gene.plotsub   <- dplyr::select(
+    genome_join(gene.plotdata, visregion, by=c('seqnames', 'start', 'end')),
+    -c(seqnames.y, start.y, end.y) )
+  colnames(gene.plotsub)[is.element(colnames(gene.plotsub), c('seqnames.x', 'start.x', 'end.x'))] <- c('seqnames', 'start', 'end')
+  
+  ## make DT
+  setDT(gene.plotsub)
+  
+  ## factorize strand
+  gene.plotsub[, strand := factor(strand, levels=c('+', '-', '*'))]
+  
+  ## facet
+  gene.plotsub[, hpi  := genome]
+  
+  
+  ## put 'clusters' into one y-position
+  for (i in unique(gene.plotsub$cluster)) {
+    gene.plotsub$ymin[gene.plotsub$cluster == i] <- seq(1, nrow(gene.plotsub[gene.plotsub$cluster == i, ]))
     
-    ## make DT
-    setDT(gene.plotsub)
+  }
+  #gene.plotsub[, ymin := seq(1, n_distinct(start)), by=cluster]
+  
+  ## back to DF
+  setDF(gene.plotsub)
+  
+  ### Add sub-gene positions
+  gene.plotsub$subgene.start <- gene.plotsub$start
+  gene.plotsub$subgene.end   <- gene.plotsub$end
+  for (i in unique(gene.plotsub$gene)) {
+    gene.plotsub$start[gene.plotsub$gene == i] <- min(gene.plotsub$start[gene.plotsub$gene == i])
+    gene.plotsub$end  [gene.plotsub$gene == i] <- max(gene.plotsub$end  [gene.plotsub$gene == i])
+  }
+  gene.plotsub$width <- abs(gene.plotsub$end - gene.plotsub$start)+1
+  
+  ### Gene names
+  gene.plotsub[,'gene_name'] <- gene.plotsub[,gene_name_col]
+  ## make gene names lowercase
+  if(tolower) { gene.plotsub$gene_name <- tolower(gene.plotsub$gene_name) }
+  
+  ## ORi regions strand !!!
+  #gene.plotsub$strand[grep('Ori', gene.plotsub$gene)] <- '*' #### !!!!
+  
+  ## flip
+  if (flip.gene.y)  { gene.plotsub$ymin <- gene.plotsub$ymin * -1 }
+  
+  ## force into one row
+  gene.plotsub$ylab <- gene.plotsub$ymin
+  if (force.gene.y) {
+    gene.plotsub$ymin[gene.plotsub$strand=='+'] <- 1
+    gene.plotsub$ymin[gene.plotsub$strand=='-'] <- 0
+    gene.plotsub$ymin[gene.plotsub$strand=='*'] <- 0.5
+  }
+  
+  ## stranded and unstranded features for geom_gene arrow and geom_rect
+  gene.unstranded <- gene.plotsub[gene.plotsub$strand == '*', ]#; gene.unstranded$strand <- factor(gene.unstranded$strand, levels=  '*')
+  gene.stranded   <- gene.plotsub[gene.plotsub$strand != '*', ]#; gene.stranded$strand   <- factor(gene.stranded$strand,   levels=c('+', '-'))
+  
+  ## gene labels pointing up and down
+  if (force.gene.y) {
+    gene.feature.upwards   <- as.data.frame(unique.data.frame(gene.stranded[gene.stranded$ylab  != Mode(gene.plotsub$ylab) |
+                                                                              gene.stranded$width < gene.feature.width.thresh, c('seqnames', "gene")])) [c(T,F), 'gene']
+    gene.feature.downwards <- as.data.frame(unique.data.frame(gene.stranded[gene.stranded$ylab  != Mode(gene.plotsub$ylab) |
+                                                                              gene.stranded$width < gene.feature.width.thresh, c('seqnames', "gene")])) [c(F,T), 'gene']
+  } else {
+    gene.feature.upwards   <- as.data.frame(unique.data.frame(gene.stranded[gene.stranded$width < gene.feature.width.thresh, c('seqnames', "gene")])) [c(T,F), 'gene']
+    gene.feature.downwards <- as.data.frame(unique.data.frame(gene.stranded[gene.stranded$width < gene.feature.width.thresh, c('seqnames', "gene")])) [c(F,T), 'gene']
+  }
+  
+  if (force.all.gene.down) {
+    gene.feature.upwards   <- NULL
+    gene.feature.downwards <- gene.stranded$gene
+  }
+  
+  if (force.all.gene.up.and.down) {
+    gene.feature.upwards   <- gene.stranded$gene[gene.stranded$strand == '+']
+    gene.feature.downwards <- gene.stranded$gene[gene.stranded$strand == '-']
+  }
+  
+  ## add unstranded !!!
+  if (add.unstranded) {
+    #gene.unstranded$start[gene.unstranded$width < 100] <- gene.unstranded$start - 20
+    #gene.unstranded$end  [gene.unstranded$width < 100] <- gene.unstranded$end   + 20
     
-    ## factorize strand
-    gene.plotsub[, strand := factor(strand, levels=c('+', '-', '*'))]
-
-    ## facet
-    gene.plotsub[, hpi  := genome]
-
+    ## force unstranded y position
+    try({ gene.unstranded$ymin <- max(gene.plotsub$ymin) })
+  }
+  
+  ## force giving only one label for each gene (in case of multi-exoned genes)
+  if (force.one.lab.per.gene) {
+    multi.genes <- dup(gene.stranded$gene)
+    for (mgene in multi.genes) {
+      gene.stranded[gene.stranded$gene == mgene & !is.na(gene.stranded$gene),'gene_name'][1]  <- mgene
+      gene.stranded[gene.stranded$gene == mgene & !is.na(gene.stranded$gene),'gene_name'][-1] <- NA
+    }
+  }
+  
+  ## recalculate xlim of plots to include gene annotations coverage
+  if(!exists('xlim')) {
+    visfrom    <- min(c(visfrom, min(gene.plotsub$start)))
+    visto      <- max(c(visto,   max(gene.plotsub$end  )))
+    visregion  <- data.frame(seqnames=genome, start=visfrom, end=visto)
+  }
+  
+  gene.plotsub$strand    <- factor(gene.plotsub$strand,    levels=c('+', '-', '*'))
+  gene.stranded$strand   <- factor(gene.stranded$strand,   levels=c('+', '-', '*'))
+  gene.unstranded$strand <- factor(gene.unstranded$strand, levels=c('+', '-', '*'))
+  
+  ### Check if there are CAGE clusters in the region
+  if( add.cageTSS ) {
+    cagefr.clust <- dplyr::select(genome_join(cagefr.clust, visregion, by=c('seqnames', 'start', 'end')), -c(seqnames.y, start.y, end.y) )
+    colnames(cagefr.clust)[is.element(colnames(cagefr.clust), c('seqnames.x', 'start.x', 'end.x'))] <- c('seqnames', 'start', 'end')
+    cagefr.clust$strand <- factor(cagefr.clust$strand, levels=c('+', '-', '*'))
     
-    ## put 'clusters' into one y-position
-    for (i in unique(gene.plotsub$cluster)) {
-      gene.plotsub$ymin[gene.plotsub$cluster == i] <- seq(1, nrow(gene.plotsub[gene.plotsub$cluster == i, ]))
-      
-    }
-    #gene.plotsub[, ymin := seq(1, n_distinct(start)), by=cluster]
+    if (nrow(cagefr.clust) > 0) { add.cageTSS <- T } else { add.cageTSS <- F }
     
-    ## back to DF
-    setDF(gene.plotsub)
+  }
+  
+  ### CAGE TSS clusters as genome feature
+  if(add.cageTSS ) {
     
-    ### Add sub-gene positions
-    gene.plotsub$subgene.start <- gene.plotsub$start
-    gene.plotsub$subgene.end   <- gene.plotsub$end
-    for (i in unique(gene.plotsub$gene)) {
-      gene.plotsub$start[gene.plotsub$gene == i] <- min(gene.plotsub$start[gene.plotsub$gene == i])
-      gene.plotsub$end  [gene.plotsub$gene == i] <- max(gene.plotsub$end  [gene.plotsub$gene == i])
-    }
-    gene.plotsub$width <- abs(gene.plotsub$end - gene.plotsub$start)+1
-
-    ### Gene names
-    gene.plotsub[,'gene_name'] <- gene.plotsub[,gene_name_col]
-    ## make gene names lowercase
-    if(tolower) { gene.plotsub$gene_name <- tolower(gene.plotsub$gene_name) }
-
-    ## ORi regions strand !!!
-    #gene.plotsub$strand[grep('Ori', gene.plotsub$gene)] <- '*' #### !!!!
-
-    ## flip
-    if (flip.gene.y)  { gene.plotsub$ymin <- gene.plotsub$ymin * -1 }
-
-    ## force into one row
-    gene.plotsub$ylab <- gene.plotsub$ymin
-    if (force.gene.y) {
-      gene.plotsub$ymin[gene.plotsub$strand=='+'] <- 1
-      gene.plotsub$ymin[gene.plotsub$strand=='-'] <- 0
-      gene.plotsub$ymin[gene.plotsub$strand=='*'] <- 0.5
-    }
-
-    ## stranded and unstranded features for geom_gene arrow and geom_rect
-    gene.unstranded <- gene.plotsub[gene.plotsub$strand == '*', ]#; gene.unstranded$strand <- factor(gene.unstranded$strand, levels=  '*')
-    gene.stranded   <- gene.plotsub[gene.plotsub$strand != '*', ]#; gene.stranded$strand   <- factor(gene.stranded$strand,   levels=c('+', '-'))
-
-    ## gene labels pointing up and down
-    if (force.gene.y) {
-      gene.feature.upwards   <- as.data.frame(unique.data.frame(gene.stranded[gene.stranded$ylab  != Mode(gene.plotsub$ylab) |
-                                                                                gene.stranded$width < gene.feature.width.thresh, c('seqnames', "gene")])) [c(T,F), 'gene']
-      gene.feature.downwards <- as.data.frame(unique.data.frame(gene.stranded[gene.stranded$ylab  != Mode(gene.plotsub$ylab) |
-                                                                                gene.stranded$width < gene.feature.width.thresh, c('seqnames', "gene")])) [c(F,T), 'gene']
-    } else {
-      gene.feature.upwards   <- as.data.frame(unique.data.frame(gene.stranded[gene.stranded$width < gene.feature.width.thresh, c('seqnames', "gene")])) [c(T,F), 'gene']
-      gene.feature.downwards <- as.data.frame(unique.data.frame(gene.stranded[gene.stranded$width < gene.feature.width.thresh, c('seqnames', "gene")])) [c(F,T), 'gene']
-    }
-
-    if (force.all.gene.down) {
-      gene.feature.upwards   <- NULL
-      gene.feature.downwards <- gene.stranded$gene
-    }
-
-    if (force.all.gene.up.and.down) {
-      gene.feature.upwards   <- gene.stranded$gene[gene.stranded$strand == '+']
-      gene.feature.downwards <- gene.stranded$gene[gene.stranded$strand == '-']
-    }
-
-    ## add unstranded !!!
-    if (add.unstranded) {
-      #gene.unstranded$start[gene.unstranded$width < 100] <- gene.unstranded$start - 20
-      #gene.unstranded$end  [gene.unstranded$width < 100] <- gene.unstranded$end   + 20
-
-      ## force unstranded y position
-      try({ gene.unstranded$ymin <- max(gene.plotsub$ymin) })
-    }
-
-    ## force giving only one label for each gene (in case of multi-exoned genes)
-    if (force.one.lab.per.gene) {
-      multi.genes <- dup(gene.stranded$gene)
-      for (mgene in multi.genes) {
-        gene.stranded[gene.stranded$gene == mgene & !is.na(gene.stranded$gene),'gene_name'][1]  <- mgene
-        gene.stranded[gene.stranded$gene == mgene & !is.na(gene.stranded$gene),'gene_name'][-1] <- NA
-      }
-    }
-
-    ## recalculate xlim of plots to include gene annotations coverage
-    if(!exists('xlim')) {
-      visfrom    <- min(c(visfrom, min(gene.plotsub$start)))
-      visto      <- max(c(visto,   max(gene.plotsub$end  )))
-      visregion  <- data.frame(seqnames=genome, start=visfrom, end=visto)
-    }
-
-    gene.plotsub$strand    <- factor(gene.plotsub$strand,    levels=c('+', '-', '*'))
-    gene.stranded$strand   <- factor(gene.stranded$strand,   levels=c('+', '-', '*'))
-    gene.unstranded$strand <- factor(gene.unstranded$strand, levels=c('+', '-', '*'))
-
-    ### Check if there are CAGE clusters in the region
-    if( add.cageTSS ) {
-      cagefr.clust <- dplyr::select(genome_join(cagefr.clust, visregion, by=c('seqnames', 'start', 'end')), -c(seqnames.y, start.y, end.y) )
-      colnames(cagefr.clust)[is.element(colnames(cagefr.clust), c('seqnames.x', 'start.x', 'end.x'))] <- c('seqnames', 'start', 'end')
-      cagefr.clust$strand <- factor(cagefr.clust$strand, levels=c('+', '-', '*'))
+    ## faceting
+    cagefr.clust$hpi <- genome
     
-      if (nrow(cagefr.clust) > 0) { add.cageTSS <- T } else { add.cageTSS <- F }
-      
-    }
+    ## y-positions
+    #cagefr.clust$ymin  <-  max(gene.plotsub$ymin) + cagefr.clust.dist
+    #cagefr.clust$ymax  <-  max(gene.plotsub$ymin) + cagefr.clust.dist + 1
+    #cagefr.clust$y[cagefr.clust$strand == '-'] <- cagefr.clust$ymin
+    #cagefr.clust$y[cagefr.clust$strand == '+'] <- cagefr.clust$ymax
     
-    ### CAGE TSS clusters as genome feature
-    if(add.cageTSS ) {
-      
-      ## faceting
-      cagefr.clust$hpi <- genome
-
-      ## y-positions
-      #cagefr.clust$ymin  <-  max(gene.plotsub$ymin) + cagefr.clust.dist
-      #cagefr.clust$ymax  <-  max(gene.plotsub$ymin) + cagefr.clust.dist + 1
-      #cagefr.clust$y[cagefr.clust$strand == '-'] <- cagefr.clust$ymin
-      #cagefr.clust$y[cagefr.clust$strand == '+'] <- cagefr.clust$ymax
-
-      # Adjust 'y' values for '+' strand based on 'dist'
-      cagefr.clust$y[cagefr.clust$strand == '+'] <-
-        ifelse(cagefr.clust.dist > 0,
-               max(gene.plotsub$ymin) + cagefr.clust.dist + 1,
-               min(gene.plotsub$ymin) - cagefr.clust.dist)
-
-      # Adjust 'y' values for '-' strand based on 'dist'
-      cagefr.clust$y[cagefr.clust$strand == '-'] <-
-        ifelse(cagefr.clust.dist > 0,
-               max(gene.plotsub$ymin) + cagefr.clust.dist,
-               min(gene.plotsub$ymin) - cagefr.clust.dist - 1)
-
-      cagefr.clust$ymin  <-  min(cagefr.clust$y)
-      cagefr.clust$ymax  <-  max(cagefr.clust$y)
-
-      # crop other clusters
-      #cagefr.clust$region_start <- visfrom # min(cagefr.clust$start)
-      #cagefr.clust$region_end   <- visto   # max(cagefr.clust$end)
-      cagefr.clust$visfrom <- visfrom # min(cagefr.clust$start)
-      cagefr.clust$visto   <- visto   # max(cagefr.clust$end)
-      
-      
-      ## factorize strands
-      cagefr.clust$strand <-  factor(cagefr.clust$strand, levels = c('+' ,'-', '*'))
-
-      ## y-breaks
-      ybreaks.genome <- unique(c(gene.plotsub$ymin, cagefr.clust$y))
-
-    } else {
-      cagefr.clust   <- data.frame(ymin=min(gene.plotsub$ymin), ymax=max(gene.plotsub$ymin))
-
-      ybreaks.genome <- unique( c(gene.plotsub$ymin  ))
-
-    }
-
-    ### Set y-axis limits
-    if (is.null(ylims.gene)) {
-      ylims.gene <- c(min(c(gene.plotsub$ymin, cagefr.clust$ymin)) - y.multip,
-                      max(c(gene.plotsub$ymin, cagefr.clust$ymax)) + y.multip)
-    } else {
-      ylims.gene <- ylims.gene
-    }
-
+    # Adjust 'y' values for '+' strand based on 'dist'
+    cagefr.clust$y[cagefr.clust$strand == '+'] <-
+      ifelse(cagefr.clust.dist > 0,
+             max(gene.plotsub$ymin) + cagefr.clust.dist + 1,
+             min(gene.plotsub$ymin) - cagefr.clust.dist)
     
-    ### Build genome annotation subplot
-    gggenome <- ggplot(#gene.plotsub, #[gene.plotsub$strand != '*', ],
-      mapping = gene.aes) +
-
-      ## Gene arrows
-      geom_gene_arrow(
-        data = gene.stranded,
-        arrowhead_height  = grid::unit(gene.sizes$gene_arrowhead_height,  "mm"),
-        arrow_body_height = grid::unit(gene.sizes$gene_arrow_body_height, "mm"),
-        alpha=alpha$gene_geom,
-        fill='white') +
-
-      ## Sub-gene arrows
-      geom_subgene_arrow(
-        aes(xsubmin = subgene.start, xsubmax = subgene.end, ),
-        data = gene.stranded,
-        arrowhead_height  = grid::unit(gene.sizes$gene_arrowhead_height,  "mm"),
-        arrow_body_height = grid::unit(gene.sizes$gene_arrow_body_height, "mm"),
-        alpha=alpha$gene_geom) +
-
-     ## Gene Arrow labels or Gene Feature Labels?
-      { if(gene.label & !add.feature & !force.all.gene.down & !force.all.gene.up.and.down)
-        message('Adding Gene Arrow Labels')
-        geom_gene_label(
-          data  = gene.stranded[!is.element(gene.stranded$gene, c(gene.feature.upwards, gene.feature.downwards)),],
-          height = grid::unit(gene.sizes$gene_label_height, "mm"), grow = F, colour=gene.label.col, align = "centre")
-      } +
-
-      ## Gene feature labels --> pointing upwards
-      { if(gene.label & add.feature  & !force.all.gene.down & !force.all.gene.up.and.down)
-        message('Adding Gene Feature Labels')
-        geom_feature(
-          data = gene.stranded[is.element(gene.stranded$gene, gene.feature.upwards),  ],
-          aes(x = xmean, y = ymin), forward = 1,
-          feature_height = grid::unit(gene.sizes$gene_feature_height, "mm"),
-          feature_width  = grid::unit(gene.sizes$gene_feature_width,  "mm")
-        ) } +
-
-      { if(gene.label & add.feature  & !force.all.gene.down & !force.all.gene.up.and.down)
-        geom_feature_label(
-          data = gene.stranded[is.element(gene.stranded$gene, gene.feature.upwards), ],
-          aes(x = xmean, y = ymin, label=gene_name), forward = 1,
-          feature_height = grid::unit(gene.sizes$gene_feature_label_height, "mm"),
-          label_height   = grid::unit(gene.sizes$gene_feature_label_text,   "mm") #,size=gene.sizes[5]
-          ) } +
-
-      ## Gene feature labels  --> pointing downwards
-      { if(gene.label & add.feature  & !force.all.gene.down & !force.all.gene.up.and.down)
-        geom_feature(
-          data = gene.stranded[is.element(gene.stranded$gene, gene.feature.downwards),],
-          aes(x = xmean, y = ymin), forward = 1,
-          feature_height = grid::unit(-gene.sizes$gene_feature_height, "mm"),
-          feature_width  = grid::unit(-gene.sizes$gene_feature_width,  "mm")
-        ) } +
-
-      { if(gene.label & add.feature  & !force.all.gene.down & !force.all.gene.up.and.down)
-        geom_feature_label(
-          data = gene.stranded[is.element(gene.stranded$gene, gene.feature.downwards),],
-          aes(x = xmean, y = ymin, label=gene_name), forward = 1,
-          feature_height = grid::unit(-gene.sizes$gene_feature_label_height, "mm"),
-          label_height   = grid::unit(gene.sizes$gene_feature_label_text,   "mm") #,size=gene.sizes[5]
-        ) } +
-
-      ## Force all gene features pointing downwards
-      { if(gene.label & add.feature & force.all.gene.down ) geom_feature(
+    # Adjust 'y' values for '-' strand based on 'dist'
+    cagefr.clust$y[cagefr.clust$strand == '-'] <-
+      ifelse(cagefr.clust.dist > 0,
+             max(gene.plotsub$ymin) + cagefr.clust.dist,
+             min(gene.plotsub$ymin) - cagefr.clust.dist - 1)
+    
+    cagefr.clust$ymin  <-  min(cagefr.clust$y)
+    cagefr.clust$ymax  <-  max(cagefr.clust$y)
+    
+    # crop other clusters
+    #cagefr.clust$region_start <- visfrom # min(cagefr.clust$start)
+    #cagefr.clust$region_end   <- visto   # max(cagefr.clust$end)
+    cagefr.clust$visfrom <- visfrom # min(cagefr.clust$start)
+    cagefr.clust$visto   <- visto   # max(cagefr.clust$end)
+    
+    
+    ## factorize strands
+    cagefr.clust$strand <-  factor(cagefr.clust$strand, levels = c('+' ,'-', '*'))
+    
+    ## y-breaks
+    ybreaks.genome <- unique(c(gene.plotsub$ymin, cagefr.clust$y))
+    
+  } else {
+    cagefr.clust   <- data.frame(ymin=min(gene.plotsub$ymin), ymax=max(gene.plotsub$ymin))
+    
+    ybreaks.genome <- unique( c(gene.plotsub$ymin  ))
+    
+  }
+  
+  ### Set y-axis limits
+  if (is.null(ylims.gene)) {
+    ylims.gene <- c(min(c(gene.plotsub$ymin, cagefr.clust$ymin)) - y.multip,
+                    max(c(gene.plotsub$ymin, cagefr.clust$ymax)) + y.multip)
+  } else {
+    ylims.gene <- ylims.gene
+  }
+  
+  
+  ### Build genome annotation subplot
+  gggenome <- ggplot(#gene.plotsub, #[gene.plotsub$strand != '*', ],
+    mapping = gene.aes) +
+    
+    ## Gene arrows
+    geom_gene_arrow(
+      data = gene.stranded,
+      arrowhead_height  = grid::unit(gene.sizes$gene_arrowhead_height,  "mm"),
+      arrow_body_height = grid::unit(gene.sizes$gene_arrow_body_height, "mm"),
+      alpha=alpha$gene_geom,
+      fill='white') +
+    
+    ## Sub-gene arrows
+    geom_subgene_arrow(
+      aes(xsubmin = subgene.start, xsubmax = subgene.end, ),
+      data = gene.stranded,
+      arrowhead_height  = grid::unit(gene.sizes$gene_arrowhead_height,  "mm"),
+      arrow_body_height = grid::unit(gene.sizes$gene_arrow_body_height, "mm"),
+      alpha=alpha$gene_geom) +
+    
+    ## Gene Arrow labels or Gene Feature Labels?
+    { if(gene.label & !add.feature & !force.all.gene.down & !force.all.gene.up.and.down)
+      message('Adding Gene Arrow Labels')
+      geom_gene_label(
+        data  = gene.stranded[!is.element(gene.stranded$gene, c(gene.feature.upwards, gene.feature.downwards)),],
+        height = grid::unit(gene.sizes$gene_label_height, "mm"), grow = F, colour=gene.label.col, align = "centre")
+    } +
+    
+    ## Gene feature labels --> pointing upwards
+    { if(gene.label & add.feature  & !force.all.gene.down & !force.all.gene.up.and.down)
+      message('Adding Gene Feature Labels')
+      geom_feature(
+        data = gene.stranded[is.element(gene.stranded$gene, gene.feature.upwards),  ],
+        aes(x = xmean, y = ymin), forward = 1,
+        feature_height = grid::unit(gene.sizes$gene_feature_height, "mm"),
+        feature_width  = grid::unit(gene.sizes$gene_feature_width,  "mm")
+      ) } +
+    
+    { if(gene.label & add.feature  & !force.all.gene.down & !force.all.gene.up.and.down)
+      geom_feature_label(
+        data = gene.stranded[is.element(gene.stranded$gene, gene.feature.upwards), ],
+        aes(x = xmean, y = ymin, label=gene_name), forward = 1,
+        feature_height = grid::unit(gene.sizes$gene_feature_label_height, "mm"),
+        label_height   = grid::unit(gene.sizes$gene_feature_label_text,   "mm") #,size=gene.sizes[5]
+      ) } +
+    
+    ## Gene feature labels  --> pointing downwards
+    { if(gene.label & add.feature  & !force.all.gene.down & !force.all.gene.up.and.down)
+      geom_feature(
+        data = gene.stranded[is.element(gene.stranded$gene, gene.feature.downwards),],
+        aes(x = xmean, y = ymin), forward = 1,
+        feature_height = grid::unit(-gene.sizes$gene_feature_height, "mm"),
+        feature_width  = grid::unit(-gene.sizes$gene_feature_width,  "mm")
+      ) } +
+    
+    { if(gene.label & add.feature  & !force.all.gene.down & !force.all.gene.up.and.down)
+      geom_feature_label(
+        data = gene.stranded[is.element(gene.stranded$gene, gene.feature.downwards),],
+        aes(x = xmean, y = ymin, label=gene_name), forward = 1,
+        feature_height = grid::unit(-gene.sizes$gene_feature_label_height, "mm"),
+        label_height   = grid::unit(gene.sizes$gene_feature_label_text,   "mm") #,size=gene.sizes[5]
+      ) } +
+    
+    ## Force all gene features pointing downwards
+    { if(gene.label & add.feature & force.all.gene.down ) geom_feature(
+      data = gene.stranded[is.element(gene.stranded$gene, gene.feature.downwards),],
+      aes(x = xmean, y = ymin), forward = 1,
+      #size=gene.sizes$gene_label_height,
+      feature_height = grid::unit(-gene.sizes$gene_feature_height, "mm"),
+      feature_width  = grid::unit(-gene.sizes$gene_feature_width,  "mm"))
+    } +
+    { if(gene.label & add.feature & force.all.gene.down )
+      #geom_feature_label(
+      #data = gene.stranded[is.element(gene.stranded$gene, gene.feature.downwards),],
+      #aes(x = xmean, y = ymin, label=gene, angle=angle), forward = 1,
+      ##size=gene.sizes$gene_label_height,
+      #feature_height = grid::unit(-gene.sizes$gene_feature_label_height, "mm"),
+      #label_height   = grid::unit( gene.sizes$gene_feature_label_text,   "mm") #,size=gene.sizes[5]
+      #)
+      geom_text(
+        data = gene.stranded[is.element(gene.stranded$gene, gene.feature.downwards),],
+        aes(x = xmean, y = ymin-gene.sizes$gene_feature_label_height,
+            label=gene_name, angle=angle),
+        size=gene.sizes$gene_label_height)
+    } +
+    
+    ## Force (+) gene features pointing upwards and (-) downwards
+    # Down
+    { if(gene.label & add.feature & force.all.gene.up.and.down )
+      geom_feature(
         data = gene.stranded[is.element(gene.stranded$gene, gene.feature.downwards),],
         aes(x = xmean, y = ymin), forward = 1,
         #size=gene.sizes$gene_label_height,
         feature_height = grid::unit(-gene.sizes$gene_feature_height, "mm"),
         feature_width  = grid::unit(-gene.sizes$gene_feature_width,  "mm"))
-      } +
-      { if(gene.label & add.feature & force.all.gene.down )
-        #geom_feature_label(
-        #data = gene.stranded[is.element(gene.stranded$gene, gene.feature.downwards),],
-        #aes(x = xmean, y = ymin, label=gene, angle=angle), forward = 1,
-        ##size=gene.sizes$gene_label_height,
-        #feature_height = grid::unit(-gene.sizes$gene_feature_label_height, "mm"),
-        #label_height   = grid::unit( gene.sizes$gene_feature_label_text,   "mm") #,size=gene.sizes[5]
-        #)
-        geom_text(
-          data = gene.stranded[is.element(gene.stranded$gene, gene.feature.downwards),],
-          aes(x = xmean, y = ymin-gene.sizes$gene_feature_label_height,
-              label=gene_name, angle=angle),
-          size=gene.sizes$gene_label_height)
-      } +
-
-      ## Force (+) gene features pointing upwards and (-) downwards
-      # Down
-      { if(gene.label & add.feature & force.all.gene.up.and.down )
-        geom_feature(
-          data = gene.stranded[is.element(gene.stranded$gene, gene.feature.downwards),],
-          aes(x = xmean, y = ymin), forward = 1,
-          #size=gene.sizes$gene_label_height,
-          feature_height = grid::unit(-gene.sizes$gene_feature_height, "mm"),
-          feature_width  = grid::unit(-gene.sizes$gene_feature_width,  "mm"))
-      } +
-      { if(gene.label & add.feature & force.all.gene.up.and.down )
-        #geom_feature_label(
-        #data = gene.stranded[is.element(gene.stranded$gene, gene.feature.downwards),],
-        #aes(x = xmean, y = ymin, label=gene, angle=angle), forward = 1,
-        ##size=gene.sizes$gene_label_height,
-        #feature_height = grid::unit(-gene.sizes$gene_feature_label_height, "mm"),
-        #label_height   = grid::unit( gene.sizes$gene_feature_label_text,   "mm") #,size=gene.sizes[5]
-        #)
-        geom_text(
-          data = gene.stranded[is.element(gene.stranded$gene, gene.feature.downwards),],
-          aes(x = xmean, y = ymin-gene.sizes$gene_feature_label_height,
-              label=gene_name, angle=angle),
-          size=gene.sizes$gene_label_height)
-      } +
-      # Up
-      { if(gene.label & add.feature & force.all.gene.up.and.down )
-        geom_feature(
-          data = gene.stranded[is.element(gene.stranded$gene, gene.feature.upwards),],
-          aes(x = xmean, y = ymin), forward = 1,
-          #size=gene.sizes$gene_label_height,
-          feature_height = grid::unit(gene.sizes$gene_feature_height, "mm"),
-          feature_width  = grid::unit(gene.sizes$gene_feature_width,  "mm"))
-      } +
-      { if(gene.label & add.feature & force.all.gene.up.and.down )
-        #geom_feature_label(
-        #data = gene.stranded[is.element(gene.stranded$gene, gene.feature.downwards),],
-        #aes(x = xmean, y = ymin, label=gene, angle=angle), forward = 1,
-        ##size=gene.sizes$gene_label_height,
-        #feature_height = grid::unit(-gene.sizes$gene_feature_label_height, "mm"),
-        #label_height   = grid::unit( gene.sizes$gene_feature_label_text,   "mm") #,size=gene.sizes[5]
-        #)
-        geom_text(
-          data = gene.stranded[is.element(gene.stranded$gene, gene.feature.upwards),],
-          aes(x = xmean, y = ymin+gene.sizes$gene_feature_label_height,
-              label=gene_name, angle=angle),
-          size=gene.sizes$gene_label_height)
-      } +
-
-
-      ## Unstranded features with feature label
-      { if(add.unstranded ) geom_rect(
-        data=gene.unstranded,
-        aes(xmin=start, xmax=end,
-            ymin=ymin-gene.sizes$unstranded_rect_height/2,
-            ymax=ymin+gene.sizes$unstranded_rect_height/2,
-            fill=strand), color='black', fill='white')
-      } +
-      { if(add.unstranded ) geom_rect(
-        data=gene.unstranded,
-        aes(xmin=subgene.start, xmax=subgene.end,
-            ymin=ymin-gene.sizes$unstranded_rect_height/2,
-            ymax=ymin+gene.sizes$unstranded_rect_height/2,
-            fill=strand), color='black', alpha=alpha$unstranded_geom)
-      } +
-      { if(add.unstranded & force.all.gene.down ) geom_feature(
-        data = gene.unstranded,
-        aes(x = xmean, y = ymin), forward = 1,
-        feature_height = grid::unit(-gene.sizes$unstranded_feature_height, "mm"),
-        feature_width  = grid::unit(-gene.sizes$unstranded_feature_width,  "mm"))
-      } +
-      { if(add.unstranded & add.feature ) geom_feature_label(
-        data = gene.unstranded,
-        aes(x = xmean, y = ymin, label=gene_name), forward = 1,
-        feature_height = grid::unit(gene.sizes$unstranded_feature_label_height, "mm"),
-        label_height   = grid::unit(gene.sizes$unstranded_feature_label_text,   "mm") #,size=gene.sizes[5]
-      )
-      } +
-      { if(add.unstranded ) geom_text(
-        data = gene.unstranded,
+    } +
+    { if(gene.label & add.feature & force.all.gene.up.and.down )
+      #geom_feature_label(
+      #data = gene.stranded[is.element(gene.stranded$gene, gene.feature.downwards),],
+      #aes(x = xmean, y = ymin, label=gene, angle=angle), forward = 1,
+      ##size=gene.sizes$gene_label_height,
+      #feature_height = grid::unit(-gene.sizes$gene_feature_label_height, "mm"),
+      #label_height   = grid::unit( gene.sizes$gene_feature_label_text,   "mm") #,size=gene.sizes[5]
+      #)
+      geom_text(
+        data = gene.stranded[is.element(gene.stranded$gene, gene.feature.downwards),],
         aes(x = xmean, y = ymin-gene.sizes$gene_feature_label_height,
             label=gene_name, angle=angle),
         size=gene.sizes$gene_label_height)
-      } +
-
-
-      ## CAGE results
-      { if( add.cageTSS ) geom_gene_arrow(
-        arrowhead_height  = grid::unit(gene.sizes$genome_feature_arrowhead_height,  "mm"),
-        arrow_body_height = grid::unit(gene.sizes$genome_feature_arrow_body_height, "mm"),
-        data = cagefr.clust,      #[cagefr.clust$strand == '-', ],
-        aes(xmin = visfrom, xmax = visto, y = y, forward = orientation), fill="white"
-      ) } + 
-      { if( add.cageTSS ) geom_gene_arrow(
-        arrowhead_height  = grid::unit(gene.sizes$genome_feature_arrowhead_height,  "mm"),
-        arrow_body_height = grid::unit(gene.sizes$genome_feature_arrow_body_height, "mm"),
-        data = cagefr.clust,    #[cagefr.clust$strand == '-', ],
-        mapping = cluster.aes 
-      ) } + 
-      { if( add.cageTSS ) geom_feature(
-        feature_height  = unit(3, "mm"),
-        feature_width   = unit(3, "mm"),
-        arrowhead_width = unit(2, "mm"),
-        data  = cagefr.clust[cagefr.clust$strand == '+', ],
-        aes(x = start, y = y, forward = orientation)
-      ) } +
-      { if( add.cageTSS & add.cageTSS.features) geom_feature_label(
-        feature_height  = unit(3, "mm"),
-        feature_width   = unit(3, "mm"),
-        arrowhead_width = unit(2, "mm"),
-        data  = cagefr.clust[cagefr.clust$strand == '+', ],
-        aes(x = start, y = y, label = gene, forward = orientation)
-      ) } +
-      { if( add.cageTSS ) geom_feature(
-        feature_height  = unit(-3, "mm"),
-        feature_width   = unit(-3, "mm"),
-        arrowhead_width = unit(-2, "mm"),
-        data  = cagefr.clust[cagefr.clust$strand == '-', ],
-        aes(x = start, y = y, forward = orientation)
-      ) } +
-      { if( add.cageTSS & add.cageTSS.features) geom_feature_label(
-        feature_height  = unit(-3, "mm"),
-        feature_width   = unit(-3, "mm"),
-        arrowhead_width = unit(-2, "mm"),
-        data  = cagefr.clust[cagefr.clust$strand == '-', ],
-        aes(x = start, y = y, label = gene, forward = orientation)
-      ) } +
-      
-
-      ## X-axis scale
-      scale_x_continuous(labels  = function(x) format(x, big.mark = " ", scientific = FALSE),
-                         #limits  = c(visfrom, visto),
-                         breaks  = seq(0, l_genome, breakseq) ) +
-      ## Y-axis scale
-      scale_y_continuous(labels   = function(x) format(x, big.mark = " ", scientific = FALSE),
-                         #limits   = ylims.gene,
-                         breaks   = ybreaks.genome,
-                         sec.axis = sec_axis(~.,
-                                             labels = function(x) format(x, big.mark = " ", scientific = FALSE),
-                                             breaks = ybreaks.genome
-                         )) +
-
-      #if(add.cageTSS) unique(c(gene.plotsub$ymin, cagefr.clust$y)) else unique(c(gene.plotsub$ymin  ))
-      #{ if( add.cageTSS ) scale_y_continuous(breaks = unique(c(gene.plotsub$ymin, cagefr.clust$y))) } +
-      #{ if(!add.cageTSS ) scale_y_continuous(breaks = unique(c(gene.plotsub$ymin  ))) } +
-
-      
-      ## Vertical lines
-      { if(!is.null(vline ))  vline  } +
-      { if(!is.null(vline2))  vline2 } +
-      
-      
-      ## X and Y axis limits
-      coord_cartesian(ylim = c(ylims.gene[1], ylims.gene[2]),
-                      xlim = c(visfrom, visto) ) +
-
-      #xlim(c(visfrom, visto)) +
-
-      ## theme components
-      theme_general +
-      theme(strip.text       = strip.text,
-            strip.background = element_rect(fill='lightgrey'),
-            strip.placement  = 'outside' ,
-
-            axis.text.x  = if (genome.and.transcripts | genome.only | transcripts.only) { element_text(size = sizes) } else { element_blank() },
-            axis.text.y  = element_blank(),
-            axis.title.x = element_blank(),
-            axis.title.y = element_blank(), #element_text(size = 10)
-
-            axis.ticks.length.y = unit(0, "cm"),
-
-            panel.grid.minor.x = element_blank(),
-            #panel.grid.major.x = element_blank(),
-            panel.grid.minor.y = element_blank(),
-            panel.grid.major.y = element_blank(),
-
-            legend.position = 'none',
-            legend.text     = element_text(size = sizes),
-            legend.title    = element_text(size = sizes + 5),
-
-            panel.spacing = grid::unit(facet_space, "mm"),
-
-            plot.title    = element_text(size=sizes*2),
-            plot.subtitle = element_text(size=sizes)
-            
-            #,...
-      ) +
-
-
-      ## Plot margins
-
-      # If margins is set explicitly, it will apply to each part of the plot
-      { if (!is.null(margins))   theme(plot.margin = margins) } +
-
-      # Default is when the "margins" parameter is NULL.
-      # In this case the spaces between the genome and transcriptome and "coverage" plots are minimized.
-      { if (is.null(margins) & !genome.only)
-        theme(plot.margin = unit(c(1,5,5,5), 'mm')) }
-
-    ## Filling colors
-    strands <- factor(unique(as.character(gene.plotsub$strand)), levels = c('+', '-', '*'))
+    } +
+    # Up
+    { if(gene.label & add.feature & force.all.gene.up.and.down )
+      geom_feature(
+        data = gene.stranded[is.element(gene.stranded$gene, gene.feature.upwards),],
+        aes(x = xmean, y = ymin), forward = 1,
+        #size=gene.sizes$gene_label_height,
+        feature_height = grid::unit(gene.sizes$gene_feature_height, "mm"),
+        feature_width  = grid::unit(gene.sizes$gene_feature_width,  "mm"))
+    } +
+    { if(gene.label & add.feature & force.all.gene.up.and.down )
+      #geom_feature_label(
+      #data = gene.stranded[is.element(gene.stranded$gene, gene.feature.downwards),],
+      #aes(x = xmean, y = ymin, label=gene, angle=angle), forward = 1,
+      ##size=gene.sizes$gene_label_height,
+      #feature_height = grid::unit(-gene.sizes$gene_feature_label_height, "mm"),
+      #label_height   = grid::unit( gene.sizes$gene_feature_label_text,   "mm") #,size=gene.sizes[5]
+      #)
+      geom_text(
+        data = gene.stranded[is.element(gene.stranded$gene, gene.feature.upwards),],
+        aes(x = xmean, y = ymin+gene.sizes$gene_feature_label_height,
+            label=gene_name, angle=angle),
+        size=gene.sizes$gene_label_height)
+    } +
+    
+    
+    ## Unstranded features with feature label
+    { if(add.unstranded ) geom_rect(
+      data=gene.unstranded,
+      aes(xmin=start, xmax=end,
+          ymin=ymin-gene.sizes$unstranded_rect_height/2,
+          ymax=ymin+gene.sizes$unstranded_rect_height/2,
+          fill=strand), color='black', fill='white')
+    } +
+    { if(add.unstranded ) geom_rect(
+      data=gene.unstranded,
+      aes(xmin=subgene.start, xmax=subgene.end,
+          ymin=ymin-gene.sizes$unstranded_rect_height/2,
+          ymax=ymin+gene.sizes$unstranded_rect_height/2,
+          fill=strand), color='black', alpha=alpha$unstranded_geom)
+    } +
+    { if(add.unstranded & force.all.gene.down ) geom_feature(
+      data = gene.unstranded,
+      aes(x = xmean, y = ymin), forward = 1,
+      feature_height = grid::unit(-gene.sizes$unstranded_feature_height, "mm"),
+      feature_width  = grid::unit(-gene.sizes$unstranded_feature_width,  "mm"))
+    } +
+    { if(add.unstranded & add.feature ) geom_feature_label(
+      data = gene.unstranded,
+      aes(x = xmean, y = ymin, label=gene_name), forward = 1,
+      feature_height = grid::unit(gene.sizes$unstranded_feature_label_height, "mm"),
+      label_height   = grid::unit(gene.sizes$unstranded_feature_label_text,   "mm") #,size=gene.sizes[5]
+    )
+    } +
+    { if(add.unstranded ) geom_text(
+      data = gene.unstranded,
+      aes(x = xmean, y = ymin-gene.sizes$gene_feature_label_height,
+          label=gene_name, angle=angle),
+      size=gene.sizes$gene_label_height)
+    } +
+    
+    
+    ## CAGE results
+    { if( add.cageTSS ) geom_gene_arrow(
+      arrowhead_height  = grid::unit(gene.sizes$genome_feature_arrowhead_height,  "mm"),
+      arrow_body_height = grid::unit(gene.sizes$genome_feature_arrow_body_height, "mm"),
+      data = cagefr.clust,      #[cagefr.clust$strand == '-', ],
+      aes(xmin = visfrom, xmax = visto, y = y, forward = orientation), fill="white"
+    ) } + 
+    { if( add.cageTSS ) geom_gene_arrow(
+      arrowhead_height  = grid::unit(gene.sizes$genome_feature_arrowhead_height,  "mm"),
+      arrow_body_height = grid::unit(gene.sizes$genome_feature_arrow_body_height, "mm"),
+      data = cagefr.clust,    #[cagefr.clust$strand == '-', ],
+      mapping = cluster.aes 
+    ) } + 
+    { if( add.cageTSS ) geom_feature(
+      feature_height  = unit(3, "mm"),
+      feature_width   = unit(3, "mm"),
+      arrowhead_width = unit(2, "mm"),
+      data  = cagefr.clust[cagefr.clust$strand == '+', ],
+      aes(x = start, y = y, forward = orientation)
+    ) } +
+    { if( add.cageTSS & add.cageTSS.features) geom_feature_label(
+      feature_height  = unit(3, "mm"),
+      feature_width   = unit(3, "mm"),
+      arrowhead_width = unit(2, "mm"),
+      data  = cagefr.clust[cagefr.clust$strand == '+', ],
+      aes(x = start, y = y, label = gene, forward = orientation)
+    ) } +
+    { if( add.cageTSS ) geom_feature(
+      feature_height  = unit(-3, "mm"),
+      feature_width   = unit(-3, "mm"),
+      arrowhead_width = unit(-2, "mm"),
+      data  = cagefr.clust[cagefr.clust$strand == '-', ],
+      aes(x = start, y = y, forward = orientation)
+    ) } +
+    { if( add.cageTSS & add.cageTSS.features) geom_feature_label(
+      feature_height  = unit(-3, "mm"),
+      feature_width   = unit(-3, "mm"),
+      arrowhead_width = unit(-2, "mm"),
+      data  = cagefr.clust[cagefr.clust$strand == '-', ],
+      aes(x = start, y = y, label = gene, forward = orientation)
+    ) } +
+    
+    
+    ## X-axis scale
+    scale_x_continuous(labels  = function(x) format(x, big.mark = " ", scientific = FALSE),
+                       #limits  = c(visfrom, visto),
+                       breaks  = seq(0, l_genome, breakseq) ) +
+    ## Y-axis scale
+    scale_y_continuous(labels   = function(x) format(x, big.mark = " ", scientific = FALSE),
+                       #limits   = ylims.gene,
+                       breaks   = ybreaks.genome,
+                       sec.axis = sec_axis(~.,
+                                           labels = function(x) format(x, big.mark = " ", scientific = FALSE),
+                                           breaks = ybreaks.genome
+                       )) +
+    
+    #if(add.cageTSS) unique(c(gene.plotsub$ymin, cagefr.clust$y)) else unique(c(gene.plotsub$ymin  ))
+    #{ if( add.cageTSS ) scale_y_continuous(breaks = unique(c(gene.plotsub$ymin, cagefr.clust$y))) } +
+    #{ if(!add.cageTSS ) scale_y_continuous(breaks = unique(c(gene.plotsub$ymin  ))) } +
+    
+    
+    ## Vertical lines
+    { if(!is.null(vline ))  vline  } +
+    { if(!is.null(vline2))  vline2 } +
+    
+    
+    ## X and Y axis limits
+    coord_cartesian(ylim = c(ylims.gene[1], ylims.gene[2]),
+                    xlim = c(visfrom, visto) ) +
+    
+    #xlim(c(visfrom, visto)) +
+    
+    ## theme components
+    theme_general +
+    theme(strip.text       = strip.text,
+          strip.background = element_rect(fill='lightgrey'),
+          strip.placement  = 'outside' ,
+          
+          axis.text.x  = if (genome.and.transcripts | genome.only | transcripts.only) { element_text(size = sizes) } else { element_blank() },
+          axis.text.y  = element_blank(),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank(), #element_text(size = 10)
+          
+          axis.ticks.length.y = unit(0, "cm"),
+          
+          panel.grid.minor.x = element_blank(),
+          #panel.grid.major.x = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          panel.grid.major.y = element_blank(),
+          
+          legend.position = 'none',
+          legend.text     = element_text(size = sizes),
+          legend.title    = element_text(size = sizes + 5),
+          
+          panel.spacing = grid::unit(facet_space, "mm"),
+          
+          plot.title    = element_text(size=sizes*2),
+          plot.subtitle = element_text(size=sizes)
+          
+          #,...
+    ) +
+    
+    
+    ## Plot margins
+    
+    # If margins is set explicitly, it will apply to each part of the plot
+    { if (!is.null(margins))   theme(plot.margin = margins) } +
+    
+    # Default is when the "margins" parameter is NULL.
+    # In this case the spaces between the genome and transcriptome and "coverage" plots are minimized.
+    { if (is.null(margins) & !genome.only)
+      theme(plot.margin = unit(c(1,5,5,5), 'mm')) }
+  
+  ## Filling colors
+  strands <- factor(unique(as.character(gene.plotsub$strand)), levels = c('+', '-', '*'))
     strands <- strands[order(strands)]
 
     
