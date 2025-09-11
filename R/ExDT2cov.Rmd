@@ -1,0 +1,405 @@
+---
+title: "Fast, Windows‑safe coverage from transcript intervals"
+output: html_notebook
+---
+
+```{r}
+library(data.table)
+
+# Windows-safe parallelism by group with multisession
+library("future.apply", quietly = TRUE)
+library("future", quietly = TRUE)
+```
+
+
+
+# Fast coverage from [start, end] intervals (inclusive)
+# - dt: data.table with columns: seqnames, strand, start, end, sample
+# - by: grouping columns (default seqnames, strand, sample)
+# - return: 'rle' (runs with constant coverage) or 'pos' (per-position)
+# - nworkers: >1 uses future.apply (multisession on Windows) to parallelize by group
+
+
+```{r}
+
+cover_dt <- function(dt,
+                     by = c("seqnames", "strand", "sample"),
+                     return = c("rle", "pos"),
+                     nworkers = 1L) {
+  stopifnot(all(c("seqnames","strand","start","end","sample") %in% names(dt)))
+  return <- match.arg(return)
+  setDT(dt)
+
+  dt[, `:=`(start = as.integer(start), end = as.integer(end))]
+
+  add1 <- function(x) {
+    y <- x + 1L
+    y[is.na(x)] <- NA_integer_
+    y[y < x] <- .Machine$integer.max
+    y
+  }
+
+  make_runs <- function(x, bycols) {
+    ev <- x[, .(pos   = c(start, add1(end)),
+                delta = c(rep.int( 1L, .N), rep.int(-1L, .N))),
+            by = bycols]
+    # Collapse same-position events, then order by group and pos
+    ev <- ev[, .(delta = sum(delta)), by = c(bycols, "pos")]
+    do.call(setorder, c(list(ev), as.list(c(bycols, "pos"))))
+    ev[, cov := cumsum(delta), by = bycols]
+    ev[, next_pos := shift(pos, type = "lead"), by = bycols]
+    runs <- ev[!is.na(next_pos) & cov > 0L,
+               .(start = pos, end = next_pos - 1L, count = cov),
+               by = bycols]
+    runs[]
+  }
+
+  if (nworkers > 1L) {
+    requireNamespace("future.apply", quietly = TRUE)
+    requireNamespace("future", quietly = TRUE)
+    split_dt <- split(dt, by = by, drop = TRUE, keep.by = TRUE)
+    oplan <- NULL
+    if (!inherits(future::plan(), "multiprocess")) {
+      oplan <- future::plan(future::multisession, workers = nworkers)
+      on.exit({ if (!is.null(oplan)) future::plan(oplan) }, add = TRUE)
+    }
+    parts <- future.apply::future_lapply(split_dt, make_runs, bycols = by, future.seed = TRUE)
+    runs <- rbindlist(parts, use.names = TRUE)
+  } else {
+    runs <- make_runs(dt, by)
+  }
+
+  if (return == "rle") {
+    setcolorder(runs, c(by, setdiff(names(runs), by)))
+    return(runs[])
+  }
+
+  # Per-position expansion (row-wise safe)
+  runs[, {
+    pos_list <- Map(seq.int, start, end)
+    .(pos = unlist(pos_list, use.names = FALSE),
+      count = rep.int(count, lengths(pos_list)))
+  }, by = by]
+}
+
+```
+
+
+```{r}
+# Weighted coverage from intervals (data.table, Windows‑safe)
+
+This extends the previous function to support **per-interval weights** (e.g., a `count` column). For each interval we add `+w` at `start` and `-w` at `end+1`, then compute cumulative sums within each `(seqnames, strand, sample)` group. Output works both as compact **RLE** runs and expanded **per-position** coverage.
+
+
+# Weighted coverage from [start, end] intervals (inclusive)
+# - dt: data.table with columns: seqnames, strand, start, end, sample, and optionally weight_col
+# - weight_col: name of a column in dt holding per-interval weights (counts). If NULL, weight = 1 for all.
+# - by: grouping columns (default seqnames, strand, sample)
+# - return: 'rle' (runs with constant coverage) or 'pos' (per-position)
+# - nworkers: >1 uses future.apply (multisession on Windows) to parallelize by group
+```
+
+
+```{r}
+# Weighted coverage (bug‑fix) — data.table, Windows‑safe
+
+**What was wrong?** In the previous weighted version, the weight vector `w` was captured outside the `by`-grouped `j`, so inside `x[, .(...), by = bycols]` it had the **full table’s length**, not the current group’s length. That produced the length mismatch you saw.
+
+**Fix:** compute weights *inside each group* (`w <- get(wcol)`), then build events; also keep the same‑position event collapse and safe per‑position expansion.
+
+```
+
+
+```{r}
+# Weighted coverage with zero‑fill (contig‑aware, data.table, Windows‑safe)
+
+Adds an option to output **zero‑coverage** runs (or per‑base zeros) for every `(seqnames, strand, sample)` over contig spans you provide.
+
+* `include_zero = TRUE` — fill gaps (and entirely uncovered groups) with count `0` using a **contig table**.
+* `contigs_dt` — a data.table with at least `seqnames`, `start`, `end`. If it also has `strand` and/or `sample`, those restrict which groups are produced. Otherwise, we **expand** over the unique strands/samples present in `dt`.
+```
+
+
+```{r}
+
+
+cover_dt_weighted <- function(dt,
+                              weight_col = NULL,
+                              by = c("seqnames", "strand", "sample"),
+                              return = c("rle", "pos"),
+                              nworkers = 1L,
+                              # zero-fill options
+                              include_zero = FALSE,
+                              contigs_dt = NULL,
+                              contig_seq_col = "seqnames",
+                              contig_start_col = "start",
+                              contig_end_col   = "end") {
+  stopifnot(all(c("seqnames","strand","start","end","sample") %in% names(dt)))
+  return <- match.arg(return)
+  setDT(dt)
+
+  # Coerce to ints & numeric weight
+  dt[, `:=`(start = as.integer(start), end = as.integer(end))]
+  if (!is.null(weight_col)) {
+    stopifnot(weight_col %in% names(dt))
+    set(dt, j = weight_col, value = as.numeric(dt[[weight_col]]))
+  }
+  if (is.null(weight_col)) {
+    dt[, `__w__` := 1.0]
+    on.exit(dt[, `__w__` := NULL], add = TRUE)
+    weight_col <- "__w__"
+  }
+
+  # Drop 0 / NA / non-finite weights early
+  dt <- dt[is.finite(get(weight_col)) & get(weight_col) != 0]
+
+  # Safe +1 with overflow guard
+  add1 <- function(x) {
+    y <- x + 1L
+    y[is.na(x)] <- NA_integer_
+    y[ y < x ] <- .Machine$integer.max
+    y
+  }
+
+  make_runs <- function(x, bycols, wcol) {
+    # Weighted events per group: +w at start, -w at end+1
+    ev <- x[, {
+      w <- get(wcol)
+      .(pos   = c(start, add1(end)),
+        delta = c(w,     -w))
+    }, by = bycols]
+
+    # Combine same-position events
+    ev <- ev[, .(delta = sum(delta)), by = c(bycols, "pos")]
+
+    # Order by group columns and position
+    do.call(setorder, c(list(ev), as.list(c(bycols, "pos"))))
+
+    # Weighted coverage via cumsum of deltas per group
+    ev[, cov := cumsum(delta), by = bycols]
+    ev[, next_pos := shift(pos, type = "lead"), by = bycols]
+
+    runs <- ev[!is.na(next_pos) & cov > 0,
+               .(start = pos, end = next_pos - 1L, count = cov),
+               by = bycols]
+    runs[]
+  }
+
+  # Compute positive-coverage runs
+  if (nrow(dt) == 0L) {
+    runs <- data.table(matrix(ncol = length(by) + 3L, nrow = 0L))
+    setnames(runs, c(by, "start", "end", "count"))
+  } else if (nworkers > 1L) {
+    requireNamespace("future.apply", quietly = TRUE)
+    requireNamespace("future", quietly = TRUE)
+    split_dt <- split(dt, by = by, drop = TRUE, keep.by = TRUE)
+
+    oplan <- NULL
+    if (!inherits(future::plan(), "multiprocess")) {
+      oplan <- future::plan(future::multisession, workers = nworkers)
+      on.exit({ if (!is.null(oplan)) future::plan(oplan) }, add = TRUE)
+    }
+
+    parts <- future.apply::future_lapply(
+      split_dt, make_runs, bycols = by, wcol = weight_col, future.seed = TRUE
+    )
+    runs <- rbindlist(parts, use.names = TRUE)
+  } else {
+    runs <- make_runs(dt, by, weight_col)
+  }
+
+  # === Zero-fill RLE based on contig spans ===
+  if (isTRUE(include_zero)) {
+    stopifnot(!is.null(contigs_dt),
+              all(c(contig_seq_col, contig_start_col, contig_end_col) %in% names(contigs_dt)))
+
+    g0 <- unique(as.data.table(contigs_dt)[,
+      .(seqnames = get(contig_seq_col),
+        g_start  = as.integer(get(contig_start_col)),
+        g_end    = as.integer(get(contig_end_col)))
+    ])
+
+    # Expand contigs across any missing by-columns using dt's uniques
+    comb_list <- list(seqnames = unique(g0$seqnames))
+    for (col in setdiff(by, "seqnames")) {
+      if (col %in% names(contigs_dt)) comb_list[[col]] <- unique(contigs_dt[[col]])
+      else                            comb_list[[col]] <- unique(dt[[col]])
+    }
+    comb <- do.call(CJ, c(comb_list, list(unique = TRUE)))
+    contigs_exp <- g0[comb, on = "seqnames", nomatch = 0L]
+
+    # Groups with no positive runs -> full-length zero run
+    runs_keys <- unique(runs[, ..by])
+    missing_groups <- contigs_exp[!runs_keys, on = by]
+    zero_missing <- if (nrow(missing_groups)) {
+      missing_groups[, .(start = g_start, end = g_end, count = 0.0), by = by]
+    } else data.table(matrix(ncol = length(by) + 3L, nrow = 0L))
+    if (nrow(zero_missing)) setnames(zero_missing, c(by, "start", "end", "count"))
+
+    # For groups with positives, add leading/trailing and between-run zeros
+    if (nrow(runs)) {
+      runs2 <- contigs_exp[runs, on = by]
+      # g_start/g_end now available per group
+      zeros_between <- runs2[, {
+        sd <- copy(.SD)
+        setorder(sd, start, end)
+        gs <- g_start[1L]; ge <- g_end[1L]
+        out <- vector("list", 3L)
+        k <- 0L
+        if (nrow(sd) && sd$start[1L] > gs) { k <- k + 1L; out[[k]] <- data.table(start = gs, end = sd$start[1L] - 1L, count = 0.0) }
+        if (nrow(sd) > 1L) {
+          gaps_s <- sd$end[-.N] + 1L
+          gaps_e <- sd$start[-1L] - 1L
+          sel <- gaps_s <= gaps_e
+          if (any(sel)) { k <- k + 1L; out[[k]] <- data.table(start = gaps_s[sel], end = gaps_e[sel], count = 0.0) }
+        }
+        if (nrow(sd) && sd$end[.N] < ge) { k <- k + 1L; out[[k]] <- data.table(start = sd$end[.N] + 1L, end = ge, count = 0.0) }
+        if (k) rbindlist(out[1:k]) else data.table(start = integer(), end = integer(), count = numeric())
+      }, by = by]
+
+      runs <- rbindlist(list(runs, zeros_between, zero_missing), use.names = TRUE, fill = TRUE)
+    } else {
+      runs <- zero_missing
+    }
+
+    if (nrow(runs)) do.call(setorder, c(list(runs), as.list(c(by, "start", "end"))))
+  }
+
+  if (return == "rle") {
+    setcolorder(runs, c(by, setdiff(names(runs), by)))
+    return(runs[])
+  }
+
+  # Per-position expansion (row-wise, length-safe). This will also include zeros if include_zero=TRUE.
+  runs[, {
+    pos_list <- Map(seq.int, start, end)
+    .(pos   = unlist(pos_list, use.names = FALSE),
+      count = rep.int(count, lengths(pos_list)))
+  }, by = by]
+}
+
+```
+
+## Usage
+
+```{r}
+# Contig table (example). Provide at least seqnames,start,end.
+contigs <- data.table(seqnames = genome, start = 1, end = l_genome)
+
+# Zero-filled RLE per (seqnames,strand,sample)
+cov_runs0 <- cover_dt_weighted(
+  bam.filt, weight_col = NULL, return = "rle",
+  include_zero = TRUE, contigs_dt = contigs
+)
+
+# Zero-filled per-position (careful: large)
+cov_pos0 <- cover_dt_weighted(
+   bam.filt, weight_col = NULL, return = "pos",
+   include_zero = TRUE, contigs_dt = contigs
+)
+
+```
+
+**Notes**
+
+* If `contigs_dt` also includes `strand` and/or `sample`, zero-filling is restricted to those; otherwise we expand over the unique strands/samples present in `dt`.
+* Zeros are of type numeric (`0.0`) to match weighted sums.
+* Prefer **RLE** for speed/memory; expand to per-base only for final ROIs or plotting.
+* If you need zero-fill for a subset of samples or strands, pass that subset in `contigs_dt`.
+
+```
+
+```
+
+
+## From bam-like DT
+
+### Example
+
+```{r}
+cov_runs <- cover_dt(bam.filt[sample == 'C6_12h_1'], return = "rle")
+# Per-position (can be large!)
+cov_pos  <- cover_dt(bam.filt[sample == 'C6_12h_1'], return = "pos")
+```
+
+### Testing
+
+```{r}
+## CHECK
+
+nrow(bam.filt[sample == "C6_12h_1" & start <= 9888 & end >= 9888 & strand == '+']) == cov_pos[sample == "C6_12h_1" & pos == 9888 & strand == '+', count]
+nrow(bam.filt[sample == "C6_12h_1" & start <= 9888 & end >= 9888 & strand == '-']) == cov_pos[sample == "C6_12h_1" & pos == 9888 & strand == '-', count]
+
+## it works fine and was very fast!
+
+```
+
+
+### Use it
+
+```{r}
+# Your input has: seqnames, strand, start, end, sample
+# Example: compact coverage runs (recommended)
+cov_runs <- cover_dt(bam.filt[], return = "rle")
+
+# If you truly need per-position coverage (beware memory):
+cov_pos  <- cover_dt(bam.filt[], return = "pos")
+
+# Parallel on Windows (multisession): -->> requires large memory allocation and is inefficient
+#cov_pos <- cover_dt(bam.filt, return = "rle", nworkers = 6)
+```
+
+
+
+## From TX-Exon DT with counts
+
+### Examples
+
+```{r}
+# 1) Using a preexisting interval weight column (e.g., 'count')
+#    dt must have: seqnames, strand, start, end, sample, count
+cov_runs_w <- cover_dt_weighted(TX.EX.counts, weight_col = "read_count", return = "rle")
+
+```
+
+```{r}
+# 3) Per-position expansion (large!)
+cov_pos_w  <- cover_dt_weighted(TX.EX.counts, weight_col = "read_count", return = "pos", include_zero = TRUE, contigs_dt = contigs)
+```
+
+### Testing
+
+```{r}
+## CHECK
+
+TX.EX.counts[sample == "C6_12h_1" & start <= 115500 & end >= 115500 & strand == '+', 
+             .(sum_count = sum(read_count))][, sum_count] == 
+  cov_pos_w[sample == "C6_12h_1" & pos == 115500 & strand == '+', count]
+
+TX.EX.counts[sample == "C6_12h_1" & start <= 115450 & end >= 115450 & strand == '+', 
+             .(sum_count = sum(read_count))][, sum_count] == 
+  cov_pos_w[sample == "C6_12h_1" & pos == 115450 & strand == '+', count]
+
+## it works fine and was very fast!
+
+```
+
+
+
+### Notes
+
+* The **weighted** coverage equals the sum of interval weights covering each position.
+* Weights can be integer or numeric; zero/NA-weighted intervals are removed upfront.
+* If your table already has per-sample `(seqnames, strand, sample)` groupings, just keep those columns; the function will group correctly.
+* Prefer **RLE output** for speed/memory; expand to per-base only for final ROIs or plotting.
+* You can safely merge/plot `cov_runs_w` across samples since `count` is already weighted by the interval counts.
+
+
+
+### Notes
+
+* Intervals are treated as **inclusive** `[start, end]` via the `end+1` trick.
+* The corrected `delta` construction is **length-matched per group**: `2*.N`.
+* Sorting is only by `pos` because the `by` columns are carried through and we compute `cumsum` by group.
+* If your coordinates are extremely large, consider using `integer64` or staying within 32-bit ranges.
+* Prefer **RLE output** and expand to per-base only on the final ROI if needed.
