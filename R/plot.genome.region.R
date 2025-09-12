@@ -784,6 +784,7 @@ plot.genome.region <-
 
 
   #### Genome coverage plot ####
+  if(transcripts.only | genome.only) { add.coverage <- F }
   if(add.coverage) {
 
     ### Manipulate data
