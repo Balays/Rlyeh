@@ -1,21 +1,21 @@
 
 plotfun.TRs.only   <- function(samples=NA, visfrom = NA, visto = NA, vline= NULL,  vline2 = NULL, 
                                breakseq=NULL, ylim=NULL, cagefr.clust=NULL, 
-                               annot_fill_column = annot_fill_column,
+                               annot_fill_column = annot_fill_column, palette=colorvec, tr.palette = colorvec,
                                TR.merged.data=TR.merged.data.sub, plot.data=plot.sum.sub, ...) {
   
   FigY    <- plot.genome.region(visfrom=visfrom,	visto=visto, samples = samples,
                                 facet_cropF = facet_nested(rows=vars(hpi), scales=scales, drop=T),
                                 plot.data=plot.data, #[plot.sum$strand == '+',], 
                                 genome.and.transcripts = T, transcripts.only = T,
-                                #[TIS.df.sum.all$tss == tss,],
+                                annot_fill_column = annot_fill_column,
                                 add.genome.plot=T, genome.only = F,
                                 add.transcripts.plot =T, TR.merged.data=TR.merged.data, add.CAGE_significance.to.TRs=F, 
                                 transcript.sizes=NULL, tr.size.multip = 0.75, transcript.plot.scale=1.25, TR.y.add = 0.5,
                                 facet_genes = NULL, facet_TR = NULL,
                                 gene.plotdata=gene.plotdata, genome=genome, prime = prime,
                                 sum.counts.in.window=T, bin_width = bin_width, add.all.pos=T, y.thresh=NA,
-                                gene.label=T, gene_name_col = 'gene_name', 
+                                gene.label=T, gene_name_col = 'gene_name', tr.palette = tr.palette,
                                 add.unstranded=T, 
                                 add.feature=T, 
                                 force.all.gene.up.and.down = T,
@@ -42,7 +42,8 @@ plotfun.TRs.only   <- function(samples=NA, visfrom = NA, visto = NA, vline= NULL
                                 vline  = vline,  # if (exists('vline' )) vline  else NULL,
                                 vline2 = vline2, # if (exists('vline2')) vline2 else NULL,
                                 xlab_name='Genomic Position', ylab_name='5`-end coverage percent (%)',
-                                return.plot.data=F, ...)
+                                return.plot.data=F, 
+                                ...)
   
 }
 

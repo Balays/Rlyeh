@@ -601,23 +601,29 @@ plot.genome.region <-
         size=gene.sizes$gene_label_height)
     } +
     
-    
+    #gggenome +
     ## Unstranded features with feature label
     { if(add.unstranded ) geom_rect(
       data=gene.unstranded,
       aes(xmin=start, xmax=end,
-          ymin=ymin-gene.sizes$unstranded_rect_height/2,
-          ymax=ymin+gene.sizes$unstranded_rect_height/2,
+          ymin=ymean - gene.sizes$unstranded_rect_height/2,
+          ymax=ymean + gene.sizes$unstranded_rect_height/2,
+          
+          #ymin=ymin-gene.sizes$unstranded_rect_height/2,
+          #ymax=ymin+gene.sizes$unstranded_rect_height/2,
           fill=strand), color='black', fill='white')
     } +
     { if(add.unstranded ) geom_rect(
       data=gene.unstranded,
       aes(xmin=subgene.start, xmax=subgene.end,
-          ymin=ymin-gene.sizes$unstranded_rect_height/2,
-          ymax=ymin+gene.sizes$unstranded_rect_height/2,
+          ymin=ymean - gene.sizes$unstranded_rect_height/2,
+          ymax=ymean + gene.sizes$unstranded_rect_height/2,
+          
+          #ymin=ymin-gene.sizes$unstranded_rect_height/2,
+          #ymax=ymin+gene.sizes$unstranded_rect_height/2,
           fill=strand), color='black', alpha=alpha$unstranded_geom)
     } +
-    { if(add.unstranded & force.all.gene.down ) geom_feature(
+    { if(add.unstranded & add.feature ) geom_feature(
       data = gene.unstranded,
       aes(x = xmean, y = ymin), forward = 1,
       feature_height = grid::unit(-gene.sizes$unstranded_feature_height, "mm"),
@@ -626,16 +632,17 @@ plot.genome.region <-
     { if(add.unstranded & add.feature ) geom_feature_label(
       data = gene.unstranded,
       aes(x = xmean, y = ymin, label=gene_name), forward = 1,
+      size = gene.sizes$unstranded_feature_label_text,
       feature_height = grid::unit(gene.sizes$unstranded_feature_label_height, "mm"),
       label_height   = grid::unit(gene.sizes$unstranded_feature_label_text,   "mm") #,size=gene.sizes[5]
     )
     } +
-    { if(add.unstranded ) geom_text(
-      data = gene.unstranded,
-      aes(x = xmean, y = ymin-gene.sizes$gene_feature_label_height,
-          label=gene_name, angle=angle),
-      size=gene.sizes$gene_label_height)
-    } +
+    #{ if(add.unstranded ) geom_text(
+    #  data = gene.unstranded,
+    #  aes(x = xmean, y = ymin-gene.sizes$gene_feature_label_height,
+    #      label=gene_name, angle=angle),
+    #  size=gene.sizes$gene_label_height)
+    #} +
     
     
     ## CAGE results
