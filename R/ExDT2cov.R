@@ -142,6 +142,11 @@ cover_dt_weighted <- function(dt,
     if (nrow(runs)) do.call(setorder, c(list(runs), as.list(c(by, "start", "end"))))
   }
   
+  
+  # 
+  runs <- runs[, .(seqnames, strand, sample, start, end, count)]
+  
+  # 
   if (return == "rle") {
     setcolorder(runs, c(by, setdiff(names(runs), by)))
     return(runs[])
@@ -153,4 +158,5 @@ cover_dt_weighted <- function(dt,
     .(pos   = unlist(pos_list, use.names = FALSE),
       count = rep.int(count, lengths(pos_list)))
   }, by = by]
+  
 }

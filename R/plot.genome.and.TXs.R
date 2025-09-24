@@ -2,7 +2,12 @@
 plotfun.TRs.only   <- function(samples=NA, visfrom = NA, visto = NA, vline= NULL,  vline2 = NULL, 
                                breakseq=NULL, ylim=NULL, cagefr.clust=NULL, 
                                annot_fill_column = annot_fill_column, palette=colorvec, tr.palette = colorvec,
-                               TR.merged.data=TR.merged.data.sub, plot.data=plot.sum.sub, ...) {
+                               TR.merged.data=TR.merged.data.sub, plot.data=plot.sum.sub, 
+                               transcript.sizes = data.frame(
+                                 transcript.label.size = 1.25,
+                                 exon.rect_height = 0.1, exon.rect.linewidth=0.01,
+                                 intron.linetype = 'dashed', intron.linewidth = 1),
+                               ...) {
   
   FigY    <- plot.genome.region(visfrom=visfrom,	visto=visto, samples = samples,
                                 facet_cropF = facet_nested(rows=vars(hpi), scales=scales, drop=T),
@@ -11,7 +16,7 @@ plotfun.TRs.only   <- function(samples=NA, visfrom = NA, visto = NA, vline= NULL
                                 annot_fill_column = annot_fill_column,
                                 add.genome.plot=T, genome.only = F,
                                 add.transcripts.plot =T, TR.merged.data=TR.merged.data, add.CAGE_significance.to.TRs=F, 
-                                transcript.sizes=NULL, tr.size.multip = 0.75, transcript.plot.scale=1.25, TR.y.add = 0.5,
+                                transcript.sizes = transcript.sizes, tr.size.multip = 0.75, transcript.plot.scale=1.25, TR.y.add = 0.5,
                                 facet_genes = NULL, facet_TR = NULL,
                                 gene.plotdata=gene.plotdata, genome=genome, prime = prime,
                                 sum.counts.in.window=T, bin_width = bin_width, add.all.pos=T, y.thresh=NA,
