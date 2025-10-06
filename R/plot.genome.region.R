@@ -14,7 +14,7 @@ plot.genome.region <-
            genome.and.transcripts=F, transcript.plot.scale=3,
            facet_genes = facet_nested(rows=vars(seqnames), scales=scales, drop=T),
 
-           add.TR.labels=T, asterisk.size=2, tr.size.multip = 1, add.CAGE_significance.to.TRs =T, TR.y.add=1,
+           add.TR.labels=T, asterisk.size=4, tr.size.multip = 1, add.CAGE_significance.to.TRs =T, TR.y.add=1,
            facet_TR = facet_nested(rows=vars(seqnames), scales=scales, drop=T),
 
            ## CAGE (or other) clusters
@@ -22,7 +22,7 @@ plot.genome.region <-
            cluster.aes = aes(xmin = region_start, xmax = region_end, y = y, forward = orientation, fill = strand, xsubmin = start, xsubmax = end),
            add.cageTSS.features = F,
 
-           gene.label=T, add.unstranded=T, add.feature=F, gene.feature.width.thresh=700, flip.gene.y=T, force.gene.y=T,
+           gene.label=T, add.unstranded=T, add.feature=F, gene.feature.width.thresh=700, flip.gene.y=T, force.gene.y=T, force.gene.y.all = F, 
            force.all.gene.down=F, angle=-60, force.one.lab.per.gene=T, force.all.gene.up.and.down=F,
            transcript.sizes=NULL,
            annot_fill_column='strand', tr.palette = NULL,
@@ -339,17 +339,27 @@ plot.genome.region <-
   ## flip
   if (flip.gene.y)  { gene.plotsub$ymin <- gene.plotsub$ymin * -1 }
   
-  ## force into one row
+  
   gene.plotsub$ylab <- gene.plotsub$ymin
+  
+  
+  ## force into one row BY STRAND
   if (force.gene.y) {
     gene.plotsub$ymin[gene.plotsub$strand=='+'] <- 1
     gene.plotsub$ymin[gene.plotsub$strand=='-'] <- 0
     gene.plotsub$ymin[gene.plotsub$strand=='*'] <- 0.5
   }
   
+  ## force EVERY ANNOTATION into one row
+  gene.plotsub$ylab <- gene.plotsub$ymin
+  if (force.gene.y.all) {
+    gene.plotsub$ymin <- 0
+  }
+  
+  
   ## stranded and unstranded features for geom_gene arrow and geom_rect
-  gene.unstranded <- gene.plotsub[gene.plotsub$strand == '*', ]#; gene.unstranded$strand <- factor(gene.unstranded$strand, levels=  '*')
-  gene.stranded   <- gene.plotsub[gene.plotsub$strand != '*', ]#; gene.stranded$strand   <- factor(gene.stranded$strand,   levels=c('+', '-'))
+  gene.unstranded <- gene.plotsub[gene.plotsub$strand == '*', ] #; gene.unstranded$strand <- factor(gene.unstranded$strand, levels=  '*')
+  gene.stranded   <- gene.plotsub[gene.plotsub$strand != '*', ] #; gene.stranded$strand   <- factor(gene.stranded$strand,   levels=c('+', '-'))
   
   ## gene labels pointing up and down
   if (force.gene.y) {

@@ -1,5 +1,5 @@
 
-plotfun.TRs.only   <- function(samples=NA, visfrom = NA, visto = NA, vline= NULL,  vline2 = NULL, 
+plotfun.TRs.only   <- function(samples=NA, visfrom = NA, visto = NA, vline= NULL,  vline2 = NULL,  breakseq = 1500,
                                breakseq=NULL, ylim=NULL, cagefr.clust=NULL, 
                                annot_fill_column = annot_fill_column, palette=colorvec, tr.palette = colorvec,
                                TR.merged.data=TR.merged.data.sub, plot.data=plot.sum.sub, 
@@ -52,7 +52,7 @@ plotfun.TRs.only   <- function(samples=NA, visfrom = NA, visto = NA, vline= NULL
   
 }
 
-plotfun.genome.only   <- function(samples=NA, visfrom = NA, visto = NA, ylims.gene = c(-2, 4), y.multip = 3, ...) {
+plotfun.genome.only   <- function(samples=NA, visfrom = NA, visto = NA, ylims.gene = c(-2, 4), y.multip = 3, breakseq = 1500,...) {
   
   FigY    <- plot.genome.region(visfrom=visfrom,	visto=visto, samples = samples,
                                 facet_cropF = facet_nested(rows=vars(hpi), scales=scales, drop=T),
