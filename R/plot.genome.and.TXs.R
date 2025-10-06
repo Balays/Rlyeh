@@ -1,5 +1,5 @@
 
-plotfun.TRs.only   <- function(samples=NA, visfrom = NA, visto = NA, vline= NULL,  vline2 = NULL,  breakseq = 1500,
+plotfun.TRs.only   <- function(samples=NA, visfrom = NA, visto = NA, vline= NULL,  vline2 = NULL, # breakseq = 1500,
                                breakseq=NULL, ylim=NULL, cagefr.clust=NULL, 
                                annot_fill_column = annot_fill_column, palette=colorvec, tr.palette = colorvec,
                                TR.merged.data=TR.merged.data.sub, plot.data=plot.sum.sub, 

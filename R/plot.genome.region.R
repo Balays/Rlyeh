@@ -350,13 +350,6 @@ plot.genome.region <-
     gene.plotsub$ymin[gene.plotsub$strand=='*'] <- 0.5
   }
   
-  ## force EVERY ANNOTATION into one row
-  gene.plotsub$ylab <- gene.plotsub$ymin
-  if (force.gene.y.all) {
-    gene.plotsub$ymin <- 0
-  }
-  
-  
   ## stranded and unstranded features for geom_gene arrow and geom_rect
   gene.unstranded <- gene.plotsub[gene.plotsub$strand == '*', ] #; gene.unstranded$strand <- factor(gene.unstranded$strand, levels=  '*')
   gene.stranded   <- gene.plotsub[gene.plotsub$strand != '*', ] #; gene.stranded$strand   <- factor(gene.stranded$strand,   levels=c('+', '-'))
@@ -381,6 +374,7 @@ plot.genome.region <-
     gene.feature.upwards   <- gene.stranded$gene[gene.stranded$strand == '+']
     gene.feature.downwards <- gene.stranded$gene[gene.stranded$strand == '-']
   }
+  
   
   ## add unstranded !!!
   if (add.unstranded) {
@@ -410,7 +404,7 @@ plot.genome.region <-
   gene.plotsub$strand    <- factor(gene.plotsub$strand,    levels=c('+', '-', '*'))
   gene.stranded$strand   <- factor(gene.stranded$strand,   levels=c('+', '-', '*'))
   gene.unstranded$strand <- factor(gene.unstranded$strand, levels=c('+', '-', '*'))
-  
+   
   ### Check if there are CAGE clusters in the region
   if( add.cageTSS ) {
     cagefr.clust <- dplyr::select(genome_join(cagefr.clust, visregion, by=c('seqnames', 'start', 'end')), -c(seqnames.y, start.y, end.y) )
@@ -467,6 +461,17 @@ plot.genome.region <-
     ybreaks.genome <- unique( c(gene.plotsub$ymin  ))
     
   }
+  
+  
+  ## force EVERY ANNOTATION into one row
+  gene.plotsub$ylab <- gene.plotsub$ymin
+  if (force.gene.y.all) {
+    gene.stranded$ymin    <- 0
+    gene.unstranded$ymean <- 0
+    
+    message('all annotations were forced into one row!')
+  }
+  
   
   ### Set y-axis limits
   if (is.null(ylims.gene)) {
