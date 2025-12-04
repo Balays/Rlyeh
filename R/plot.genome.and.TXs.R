@@ -59,6 +59,7 @@ plotfun.genome.only   <- function(samples=NA, visfrom = NA, visto = NA, ylims.ge
                                 plot.data=plot.sum, #[plot.sum$strand == '+',], 
                                 #[TIS.df.sum.all$tss == tss,],
                                 add.genome.plot=T, genome.only = T,
+                                facet_genes = NULL, facet_TR = NULL,
                                 gene.plotdata=gene.plotdata, genome=genome, prime = prime,
                                 sum.counts.in.window=T, bin_width = bin_width, add.all.pos=T, y.thresh=NA,
                                 gene.label=T, gene_name_col = 'gene_name', 

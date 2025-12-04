@@ -27,7 +27,7 @@ plot.genome.region <-
            transcript.sizes=NULL,
            annot_fill_column='strand', tr.palette = NULL,
 
-           sizes=16, gene.sizes=NULL, gene.label.col='white', palette=pal_npg()(10), alpha=0.8, plot.title=NA,
+           sizes=16, gene.sizes=NULL, gene.label.col='white', palette=rep("#3CBC75D9", 10), alpha=0.8, plot.title=NA, # pal_npg()(10)
            gene_name_col = 'gene', tolower=F, vline=NULL, vline2=NULL, breakseq=5000, n_breaks = 5, margins=unit(c(1,1,1,1), "cm"),
            scales='fixed', genomplot.scale=5.5, ylim=c(0, NA), y.log10=F, y.log2=F, ylims.gene=NULL, y.multip=1.5,
            ybreaks=NULL, ybreak_n=10,
@@ -773,31 +773,33 @@ plot.genome.region <-
     { if (is.null(margins) & !genome.only)
       theme(plot.margin = unit(c(1,5,5,5), 'mm')) }
   
-  ## Filling colors
-  strands <- factor(unique(as.character(gene.plotsub$strand)), levels = c('+', '-', '*'))
-    strands <- strands[order(strands)]
-
+    ## --- Filling colors for gene annotations -----------------------------
+    # Determine which strand labels appear
+    present_strands <- unique(c(
+      as.character(gene.stranded$strand),
+      as.character(gene.unstranded$strand),
+      if (exists("cagefr.clust") && "strand" %in% names(cagefr.clust))
+        as.character(cagefr.clust$strand)
+    ))
+    present_strands <- intersect(c("+","-","*"), present_strands)
     
-    if        (identical(strands, c('+', '-'))) {
-      gggenome <- gggenome + scale_fill_manual(values = alpha(palette[c(1,2)], alpha=alpha$gene_geom))
-    } else if (identical(strands, c('+', '*'))) {
-      gggenome <- gggenome + scale_fill_manual(values = alpha(palette[c(1,3)], alpha=alpha$gene_geom))
-    } else if (identical(strands, c('-', '*'))) {
-      gggenome <- gggenome + scale_fill_manual(values = alpha(palette[c(2,3)], alpha=alpha$gene_geom))
-    } else if (identical(strands, c('+', '-', '*'))) {
-      gggenome <- gggenome + scale_fill_manual(values = alpha(palette[c(1,2,3)], alpha=alpha$gene_geom))
-    } else if (identical(strands, c('+'))) {
-      gggenome <- gggenome + scale_fill_manual(values = alpha(palette[c(1)], alpha=alpha$gene_geom))
-    } else if (identical(strands, c('-'))) {
-      gggenome <- gggenome + scale_fill_manual(values = alpha(palette[c(2)], alpha=alpha$gene_geom))
-    } else if (identical(strands, c('*'))) {
-      gggenome <- gggenome + scale_fill_manual(values = alpha(palette[c(3)], alpha=alpha$gene_geom))
-    }
+    # Build a named vector of fill colors with alpha transparency
+    fill_vals <- c(
+      "+" = scales::alpha(palette[1], alpha = alpha$gene_geom),
+      "-" = scales::alpha(palette[2], alpha = alpha$gene_geom),
+      "*" = scales::alpha(palette[3], alpha = alpha$gene_geom)
+    )
+    
+    # Apply the manual fill scale
+    gggenome <- gggenome +
+      scale_fill_manual(
+        values = fill_vals[present_strands],
+        limits = present_strands
+      )
     
 
-
-      ## Faceting --> this
-      gggenome <- gggenome + facet_genes #facet_cropF
+    ## Faceting --> this
+    gggenome <- gggenome + facet_genes #facet_cropF
 
 
     ## Finished annotation plot
