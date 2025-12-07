@@ -14,8 +14,8 @@ plot.genome.region <-
            genome.and.transcripts=F, transcript.plot.scale=3,
            facet_genes = facet_nested(rows=vars(seqnames), scales=scales, drop=T),
 
-           add.TR.labels=T, asterisk.size=4, tr.size.multip = 1, add.CAGE_significance.to.TRs =T, TR.y.add=1,
-           facet_TR = facet_nested(rows=vars(seqnames), scales=scales, drop=T),
+           add.TR.labels='transcript_id', asterisk.size=4, tr.size.multip = 1, add.CAGE_significance.to.TRs =T, TR.y.add=1,
+           TR.label.vjust = 200, facet_TR = facet_nested(rows=vars(seqnames), scales=scales, drop=T),
 
            ## CAGE (or other) clusters
            add.cageTSS=F, cagefr.clust=NULL, cagefr.clust.dist=6,
@@ -120,6 +120,13 @@ plot.genome.region <-
 
     TR.subdata$size <- exon.rect.linewidth /  10000
 
+    if (!is.null(add.TR.labels)) {
+      TR.subdata$xpos <- TR.subdata$prime3.TR
+      TR.subdata$xpos[TR.subdata$strand == '+'] <- TR.subdata$prime3.TR[TR.subdata$strand == '+'] + TR.label.vjust
+      TR.subdata$xpos[TR.subdata$strand == '-'] <- TR.subdata$prime3.TR[TR.subdata$strand == '-'] - TR.label.vjust
+    }
+    
+    
     ## Axis limit
     ylim.tr    <- c(TR.subdata[, min(ypos) ] - TR.y.add,
                     TR.subdata[, max(ypos) ] + TR.y.add   )
@@ -170,14 +177,22 @@ plot.genome.region <-
                    color='black', linetype=intron.linetype, linewidth=intron.linewidth) +
       
       ## Transcript labels
-      { if (add.TR.labels)
-        geom_gene_label(data = TR.subdata[last_exon == T,],
-                        aes(xmin=start.exon, xmax=end.exon, y = ypos, label=transcript_id)
-                        # , forward = 1
-                        ,height = grid::unit(transcript.label.size, "mm"), grow = F, colour=gene.label.col, align = "centre"
-                        #feature_height = grid::unit(linewidth, "mm"),
-                        #feature_width  = grid::unit(linewidth, "mm")
-        ) } +
+      { if (!is.null(add.TR.labels))
+        #geom_gene_label(data = TR.subdata[last_exon == T,],
+        #                aes(xmin=start.exon, xmax=end.exon, y = ypos, label=transcript_id)
+        #                # , forward = 1
+        #                ,height = grid::unit(transcript.label.size, "mm"), grow = F, colour=gene.label.col, align = "centre"
+        #                #feature_height = grid::unit(linewidth, "mm"),
+        #                #feature_width  = grid::unit(linewidth, "mm")
+        #) 
+        
+        geom_text(
+          data = TR.subdata[last_exon == T, ],
+          aes(x = xpos, y = ypos, label=!!sym(add.TR.labels)),
+          size=transcript.sizes$transcript.label.size
+          )
+        
+      } +
       
       ## Label CAGE supported transcripts with stars
       { if (add.CAGE_significance.to.TRs) 
