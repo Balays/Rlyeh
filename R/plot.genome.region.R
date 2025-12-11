@@ -100,11 +100,13 @@ plot.genome.region <-
 
 
     TR.subdata$strand <- factor(TR.subdata$strand, levels = c('+', '-', '*'))
-    tr.size.multip
+    
     ## Filling colors
     if(is.null(tr.palette)) { tr.palette <- palette }
     
     ## Annotation sizes
+    # tr.size.multip -> use it?
+  
     if (is.null(transcript.sizes)) {
       transcript.sizes <- data.frame(
         transcript.label.size = 1.25,
@@ -122,8 +124,8 @@ plot.genome.region <-
 
     if (!is.null(add.TR.labels)) {
       TR.subdata$xpos <- TR.subdata$prime3.TR
-      TR.subdata$xpos[TR.subdata$strand == '+'] <- TR.subdata$prime3.TR[TR.subdata$strand == '+'] + TR.label.vjust
-      TR.subdata$xpos[TR.subdata$strand == '-'] <- TR.subdata$prime3.TR[TR.subdata$strand == '-'] - TR.label.vjust
+      #TR.subdata$xpos[TR.subdata$strand == '+'] <- TR.subdata$prime3.TR[TR.subdata$strand == '+'] + TR.label.vjust
+      #TR.subdata$xpos[TR.subdata$strand == '-'] <- TR.subdata$prime3.TR[TR.subdata$strand == '-'] - TR.label.vjust
     }
     
     
@@ -149,7 +151,7 @@ plot.genome.region <-
                           y    = ypos, forward = orientation,
                           #ymin=ypos-0.2, ymax=ypos+0.2
                       ),
-                      arrowhead_height  = grid::unit(gene.sizes$gene_arrowhead_height  * tr.size.multip,  "mm"),
+                      arrowhead_height  = grid::unit(gene.sizes$gene_arrowhead_height  * tr.size.multip, "mm"),
                       arrow_body_height = grid::unit(gene.sizes$gene_arrow_body_height * tr.size.multip, "mm"),
                       alpha=alpha$gene_geom) +
 
@@ -176,21 +178,28 @@ plot.genome.region <-
                    aes(x=intron_start-1, xend=intron_end+1, y=ypos, yend=ypos),
                    color='black', linetype=intron.linetype, linewidth=intron.linewidth) +
       
+      
       ## Transcript labels
       { if (!is.null(add.TR.labels))
-        #geom_gene_label(data = TR.subdata[last_exon == T,],
-        #                aes(xmin=start.exon, xmax=end.exon, y = ypos, label=transcript_id)
-        #                # , forward = 1
-        #                ,height = grid::unit(transcript.label.size, "mm"), grow = F, colour=gene.label.col, align = "centre"
-        #                #feature_height = grid::unit(linewidth, "mm"),
-        #                #feature_width  = grid::unit(linewidth, "mm")
-        #) 
+       
+        list(
+        geom_text(
+          data = TR.subdata[ last_exon == T &
+                             strand == '+'
+                            , ],
+          aes(x = xpos, y = ypos, label=!!sym(add.TR.labels)),
+          size=transcript.sizes$transcript.label.size,
+          hjust = 0),
         
         geom_text(
-          data = TR.subdata[last_exon == T, ],
+          data = TR.subdata[ last_exon == T &
+                               strand == '-'
+                             , ],
           aes(x = xpos, y = ypos, label=!!sym(add.TR.labels)),
-          size=transcript.sizes$transcript.label.size
-          )
+          size=transcript.sizes$transcript.label.size,
+          hjust = 1)
+        )
+        
         
       } +
       
