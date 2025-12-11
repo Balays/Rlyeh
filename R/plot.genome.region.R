@@ -28,7 +28,7 @@ plot.genome.region <-
            annot_fill_column='strand', tr.palette = NULL,
 
            sizes=16, gene.sizes=NULL, gene.label.col='white', palette=rep("#3CBC75D9", 10), alpha=0.8, plot.title=NA, # pal_npg()(10)
-           gene_name_col = 'gene', tolower=F, vline=NULL, vline2=NULL, breakseq=5000, n_breaks = 5, margins=unit(c(1,1,1,1), "cm"),
+           gene_name_col = 'gene', tolower=F, vline=NULL, vline2=NULL, vline3 = NULL, breakseq=5000, n_breaks = 5, margins=unit(c(1,1,1,1), "cm"),
            scales='fixed', genomplot.scale=5.5, ylim=c(0, NA), y.log10=F, y.log2=F, ylims.gene=NULL, y.multip=1.5,
            ybreaks=NULL, ybreak_n=10,
            strip.text =  element_text(angle = 45, size = sizes*1.5, hjust = 0.5), facet_space=1,
@@ -58,6 +58,16 @@ plot.genome.region <-
   
   #### Vlines
     
+  vline3 <- if (!is.null(vline3)) {
+    list(
+      new_scale_colour(),                             # must come before the vline
+      vline3,
+      scale_colour_manual(values = palette[-(1:3)])
+    )
+  } else {
+    list()                                           # empty list if nothing to add
+  }
+  
   vline2 <- if (!is.null(vline2)) {
     list(
       new_scale_colour(),                             # must come before the vline
@@ -218,6 +228,8 @@ plot.genome.region <-
       ## Vertical lines
       { if(!is.null(vline ))  vline   } +
       { if(!is.null(vline2))  vline2  } +
+      { if(!is.null(vline3))  vline3  } +
+      
       
       #if(!is.null(vline )) { ggtr <- ggtr + new_scale_colour() + vline  + scale_colour_manual(values = palette[-c(1:3)]) }
       
@@ -748,6 +760,7 @@ plot.genome.region <-
     ## Vertical lines
     { if(!is.null(vline ))  vline  } +
     { if(!is.null(vline2))  vline2 } +
+    { if(!is.null(vline3))  vline3  } +
     
     
     ## X and Y axis limits
@@ -1053,9 +1066,11 @@ plot.genome.region <-
       ## vertical lines
       #{ if(!is.null(vline))  geom_vline(xintercept = vline,  linetype='dashed', color='blue', size=1) } +
       #{ if(!is.null(vline2)) geom_vline(xintercept = vline2, linetype='dashed', color='blue', size=1) } +
-      { if(!is.null(vline ))  vline  } +
-      { if(!is.null(vline2))  vline2 } +
-
+      { if(!is.null(vline ))  vline   } +
+      { if(!is.null(vline2))  vline2  } +
+      { if(!is.null(vline3))  vline3  } +
+      
+      
       ## Theme elements
       theme_general +
       theme(strip.text       = strip.text,
