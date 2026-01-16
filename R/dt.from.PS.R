@@ -1,10 +1,10 @@
 
 
+
 dt.from.ps <- function(ps,
                        glom_taxa=F, i=NA, t=NA, ignore_lineage = T, keep.all=T,
                        melt = T,
                        glom_samples=F, summarise.samples = NULL, by.var = 'sample'
-
                        ) {
 
 
