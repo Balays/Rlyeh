@@ -27,6 +27,7 @@ dt.from.ps <- function(ps,
     by=0, all=keep.all
   )[,-1]
 
+  setDT(psdf)
 
   if (melt) {
 
